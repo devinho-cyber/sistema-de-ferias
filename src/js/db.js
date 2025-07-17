@@ -131,7 +131,7 @@ async function sendRequest() {
     }
 
     //Envia o email de solicitação de férias
-    await handleVacationRequest(userDoc.data(), emailPeriods)
+    // await handleVacationRequest(userDoc.data(), emailPeriods)
 
     await updateDoc(userRef, vacationData);
     await saveVacationRequestOnFirebase(user.uid, userDoc.data(), vacationData)

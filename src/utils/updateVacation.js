@@ -20,7 +20,7 @@ export async function handleUpdateVacationRequest(userRef, parcel, status) {
     // Obtém os dados da parcela (se já estiverem armazenados no documento)
     const parcelaData = userData[parcel];
 
-    await createMessageToEmail(userData.email, parcelaData, status);
+    // await createMessageToEmail(userData.email, parcelaData, status);
 
     console.log("Dados atualizados com sucesso!");
   } catch (error) {
