@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+  font-family: Helvetica, sans-serif;
+}
+
+body {
+  background-image: url("/img/18705217_v1016-a-08.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #f2f2f2;
+}
+
+#sidebar {
+  transform: translateX(-100%);
+}
+#sidebar.sidebar-open {
+  transform: translateX(0);
+}

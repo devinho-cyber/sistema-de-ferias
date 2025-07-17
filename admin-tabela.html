@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCF-GEXJFR</title>
+    <link rel="stylesheet" href="src/assets/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="h-full flex flex-col">
+    <header class="bg-[#002940] text-white p-4 flex justify-between items-center fixed w-full top-0">
+        <div class="flex items-center gap-7">
+            <button id="menuToggle" class="text-white mr-4 cursor-pointer">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <h1 class="text-2xl font-bold">GERENCIADOR DE CONTROLE DE FÉRIAS - ADMINISTRADOR</h1>
+            <p class="text-xl hidden" id="aps"></p>
+        </div>
+        <div>
+            <select name="Unidade" id="Agency" class=" p-2 bg-[#002940] focus:outline-none rounded-md border-2 mr-4">
+                <option value="" selected>Todas as Unidades</option>
+                <option value="Gerencia Executiva">Gerencia Executiva</option>
+                <option value="APS Carangola">APS Carangola</option>
+                <option value="APS Cataguases">APS Cataguases</option>
+                <option value="APS São Dimas">APS São Dimas</option>
+                <option value="APS Riachuelo">APS Riachuelo</option>
+                <option value="APS Leopoldina">APS Leopoldina</option>
+                <option value="APS Muriaé">APS Muriaé</option>
+                <option value="APS Além Paraíba">APS Além Paraíba</option>
+                <option value="APS Palma">APS Palma</option>
+                <option value="APS São João Nepomuceno">APS São João Nepomuceno</option>
+                <option value="APS Espera Feliz">APS Espera Feliz</option>
+            </select>
+        </div>
+    </header>
+
+     <!-- Sidebar -->
+     <div id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-[#002940]/90 duration-300 ease-in-out z-40">
+        <div class="p-4">
+            <button id="closeSidebar" class="absolute top-4 right-4 text-white">
+                <i data-lucide="x" class="w-6 h-6 cursor-pointer"></i>
+            </button>
+            <nav class="mt-8">
+                <ul class="space-y-2">
+                    <li>
+                        <a id="homeAdm" href="./admin.html" class="block py-2 px-4 text-white hover:bg-[#002940] rounded transition-colors duration-200">
+                            Home
+                        </a>
+                    </li>
+                    <li id="tabela">
+                        <a href="./admin-tabela.html" class="block py-2 px-4 text-white hover:bg-[#002940] rounded transition-colors duration-200">
+                            Tabela
+                        </a>
+                    </li>
+                    <li>
+                        <a href="./user.html" class="block py-2 px-4 text-white hover:bg-[#002940] rounded transition-colors duration-200">
+                            Solicitação de Férias
+                        </a>
+                    </li>
+                    <li>
+                        <a href="./historico-ferias.html"
+                            class="block py-2 px-4 text-white hover:bg-[#002940] rounded transition-colors duration-200">
+                            Histórico de Férias
+                        </a>
+                    </li>
+                    <li>
+                        <button id="logoutButton" class="w-full text-left py-2 px-4 text-white hover:bg-red-600 rounded transition-colors duration-200 flex items-center">
+                          <i data-lucide="log-out"></i>
+                          Sair
+                        </button>
+                      </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-30 hidden "></div>
+
+    <main class="container mx-auto mt-28 px-4 flex-grow">
+        <section class="flex justify-between items-center">
+            <h1 class="text-4xl font-bold pb-3 capitalize" id="userGreeting">Olá,</h1>
+            <button id="create-user" class="border rounded-md cursor-pointer bg-[#002940] text-white hover:bg-blue-900 transition p-2 flex gap-x-1">
+                <i data-lucide="user-plus"></i>
+                Cadastrar Usuário
+            </button>
+        </section>
+        <div class="overflow-x-auto bg-[#002940] rounded-md mb-8">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-[#002940] text-white">
+                        <th class="p-3 text-left">Funcionário</th>
+                        <th class="p-3">Em Férias</th>
+                        <th class="p-3 text-center">APS</th>
+                        <th class="p-3 text-center">Setor</th>
+                        <th class="p-3 text-center">Email</th>
+                        <th class="p-3 text-center">Permissão</th>
+                        <th class="p-3 text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white" id="employeeTableBody">
+                    
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="modal" class="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full hidden backdrop-blur-sm"
+        aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="relative top-60 md:top-10 mx-auto p-5 shadow-lg rounded-md bg-white w-[50%]">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium" id="modal-title"></h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500" id="modal-message"></p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="modal-close" type="submit"
+                        class="px-4 py-2 text-white text-base font-medium rounded-md w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-screen" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        justify-content: center;
+        align-items: center;
+      ">
+    <div class="text-xl">Processando Solicitação...</div>
+    <i data-lucide="loader-circle" class="w-8 h-8 text-[#002940] block animate-spin"></i>
+  </div>
+</body>
+<script type="module" src="src/js/adm-tabela.js"></script>
+<script type="module" src="src/js/refresh.js"></script>
+<script>
+    // Inicializa os ícones Lucide
+    lucide.createIcons();
+
+const menuToggle = document.getElementById('menuToggle');
+const closeSidebar = document.getElementById('closeSidebar');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+const logoutButton = document.getElementById('logoutButton');
+
+function openSidebar() {
+    sidebar.classList.add('sidebar-open');
+    overlay.classList.remove('hidden');
+}
+
+function closeSidebarFunc() {
+    sidebar.classList.remove('sidebar-open');
+    overlay.classList.add('hidden');
+}
+
+menuToggle.addEventListener('click', openSidebar);
+closeSidebar.addEventListener('click', closeSidebarFunc);
+overlay.addEventListener('click', closeSidebarFunc);
+</script>
+
+</html>

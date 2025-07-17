@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCF-GEXJFR</title>
+    <link rel="stylesheet" href="src/assets/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="h-full flex flex-col bg-gray-100">
+    <header class="bg-[#002940] text-white p-4">
+        <h1 class="text-2xl font-bold uppercase">Gerenciador de Controle de férias GEXJFR</h1>
+    </header>
+    <main
+        class="flex-grow flex items-center justify-center bg-[url('/img/18705217_v1016-a-08.jpg')] bg-cover bg-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-96">
+            <h2 class="text-5xl font-bold text-[#002940] text-center mb-6">GCF</h2>
+            <form class="space-y-4" id="signUpForm">
+                <div class="flex items-center bg-gray-100 rounded-md">
+                    <i data-lucide="user" class="text-gray-500 ml-3"></i>
+                    <input id="Name" type="text" placeholder="Nome" class="w-full p-2 bg-transparent focus:outline-none"
+                        required>
+                </div>
+                <div class="flex items-center bg-gray-100 rounded-md">
+                    <i data-lucide="mail" class="text-gray-500 ml-3"></i>
+                    <input id="Email" type="email" placeholder="Email"
+                        class="w-full p-2 bg-transparent focus:outline-none" required>
+                </div>
+                <select name="Unidade" id="Agency" class="w-full p-2 bg-gray-100 focus:outline-none rounded-md"
+                    required>
+                    <option value="" selected>Selecione a Unidade</option>
+                    <option value="Gerencia Executiva">Gerencia Executiva</option>
+                    <option value="APS Carangola">APS Carangola</option>
+                    <option value="APS Cataguases">APS Cataguases</option>
+                    <option value="APS São Dimas">APS São Dimas</option>
+                    <option value="APS Riachuelo">APS Riachuelo</option>
+                    <option value="APS Leopoldina">APS Leopoldina</option>
+                    <option value="APS Muriaé">APS Muriaé</option>
+                    <option value="APS Além Paraíba">APS Além Paraíba</option>
+                    <option value="APS Palma">APS Palma</option>
+                    <option value="APS São João Nepomuceno">APS São João Nepomuceno</option>
+                    <option value="APS Espera Feliz">APS Espera Feliz</option>
+                </select>
+                <select name="" id="sector" class="w-full p-2 bg-gray-100 focus:outline-none rounded-md" style="display: none;">
+                    <option value="">Selecione sua seção</option>
+                    <option value="Gabinete">Gabinete</option>
+                    <option value="SADJ">SADJ</option>
+                    <option value="SAIS">SAIS</option>
+                    <option value="SAMB">SAMB</option>
+                    <option value="SAMC">SAMC</option>
+                    <option value="SARD">SARD</option>
+                    <option value="SAREC">SAREC</option>
+                    <option value="SEST-MAN">SEST-MAN</option>
+                    <option value="SEST-RD">SEST-RD</option>
+                    <option value="SGBEN">SGBEN</option>
+                    <option value="SGREC">SGREC</option>
+                </select>
+                <div class="flex items-center bg-gray-100 rounded-md">
+                    <i data-lucide="lock" class="text-gray-500 ml-3"></i>
+                    <input id="Password" type="password" placeholder="Senha"
+                        class="w-full p-2 bg-transparent focus:outline-none">
+                </div>
+                <div class="flex items-center bg-gray-100 rounded-md">
+                    <i data-lucide="lock" class="text-gray-500 ml-3"></i>
+                    <input id="ConfirmPassword" type="password" placeholder="Confirmar Senha"
+                        class="w-full p-2 bg-transparent focus:outline-none">
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-[#002940] text-white py-2 rounded-md hover:bg-blue-700 transition duration-300 cursor-pointer"
+                    id="btnRegister">Registrar</button>
+            </form>
+            <div class="text-center mt-4">
+                <a href="./index.html" class="text-blue-600 hover:underline">Fazer login <br></a>
+            </div>
+        </div>
+
+    </main>
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <div id="modal" class="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full hidden"
+        aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="relative top-60 mx-auto p-5 w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-xl leading-6 font-medium" id="modal-title"></h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class=" text-gray-500" id="modal-message"></p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="modal-close"
+                        class="px-4 py-2 text-white text-base font-medium rounded-md w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+
+<!-- JS -->
+<script type="module" src="src/js/register.js" type="module"></script>
+
+</html>
