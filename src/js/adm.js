@@ -8,7 +8,7 @@ import {
   updateDoc,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { setYear, currentYear, handleUpdateVacationRequest, exportSpredsheet, loadingScreen, showModal } from "../utils";
+import { setYear, currentYear, handleUpdateVacationRequest, exportSpredsheet, loadingScreen, showModal, handleUpdateVacationRequestInVacationsCollection } from "../utils";
 
 let loggedManager;
 
@@ -324,7 +324,7 @@ function createVacationCell(status, date) {
 
 function createHolidayRequestCard(request) {
   return `
-        <div class="bg-gray-100 rounded-lg p-2 flex justify-between items-center mb-2 holiday-request-card" data-request-id="${request.id}" data-parc-suffix="${request.parcSuffix}" data-employee-id="${request.employeeId}">
+        <div class="bg-gray-100 rounded-lg p-2 flex justify-between items-center mb-2 holiday-request-card" data-request-id="${request.id}" data-parc-suffix="${request.parcSuffix}" data-employee-id="${request.employeeId}" data-start-date="${request.startDate}">
             <div>
                 <p class="font-bold text-gray-600">Funcionário: ${request.employeeName}</p>
                 <p class="font-bold text-gray-600">Período: ${request.startDate} a ${request.endDate}</p> <!-- Exibindo direto do banco -->
@@ -418,7 +418,7 @@ async function populateTable(selectedYear) {
 
 async function updateHolidayRequests() {
   const container = document.getElementById("holidayRequests");
-  const selectedAgency = document.getElementById("Agency").value;
+  const selectedAgency = document.getElementById("Agency")?.value;
 
   if (!container) {
     console.error("Elemento 'holidayRequests' não encontrado no DOM.");
@@ -427,12 +427,10 @@ async function updateHolidayRequests() {
 
   try {
     const employeesRef = collection(db, "users");
-    let q;
+    let q = employeesRef
 
     if (selectedAgency) {
       q = query(employeesRef, where("agency", "==", selectedAgency));
-    } else {
-      q = employeesRef;
     }
 
     const snapshot = await getDocs(q);
@@ -444,14 +442,14 @@ async function updateHolidayRequests() {
       const employeeId = doc.id;
 
       ["one", "two", "three"].forEach((parcSuffix) => {
-        const days = employeeData[`days_${parcSuffix}`];
         const startDate = employeeData[`parc_${parcSuffix}`];
         const endDate = employeeData[`end_parc_${parcSuffix}`];
         const status = employeeData[`st_parc_${parcSuffix}`];
+        const uniqueId = employeeData[`id_parc_${parcSuffix}`]
 
-        if (status === "pendente" && startDate) {
+        if (status === "pendente" && startDate && uniqueId) {
           pendingRequests.push({
-            id: employeeId,
+            id: uniqueId,
             parcSuffix,
             employeeId,
             employeeName: employeeData.name,
@@ -472,6 +470,7 @@ async function updateHolidayRequests() {
     container
       .querySelectorAll(".approve-btn, .disapprove-btn")
       .forEach((btn) => {
+        btn.removeEventListener("click", handleRequestAction)
         btn.addEventListener("click", handleRequestAction);
       });
 
@@ -486,40 +485,38 @@ async function handleRequestAction(event) {
     ? "aprovada"
     : "reprovada";
 
-  const button = event.target;
-  const requestId = button.getAttribute("data-id");
-  console.log("Botão clicado:", requestId);
+  const holidayRequestCard = event.currentTarget.closest(".holiday-request-card");
 
-  const holidayRequestCard = event.currentTarget.closest(
-    ".holiday-request-card"
-  );
   const employeeId = holidayRequestCard.dataset.employeeId;
   const parcSuffix = holidayRequestCard.dataset.parcSuffix;
+  const requestId = holidayRequestCard.dataset.requestId;
+  const startDate = holidayRequestCard.dataset.startDate;
+
+  if (!employeeId || !parcSuffix || !requestId || !startDate) { // **Valida startDate**
+    console.table(employeeId, parcSuffix, requestId, startDate)
+    console.error("Dados incompletos para a ação da solicitação de férias.");
+    return;
+  }
 
   const userRef = doc(db, "users", employeeId);
 
   try {
-    loadingScreen.style.display = "flex"
-    const userDoc = await getDoc(userRef);
+    loadingScreen.style.display = "flex";
 
-    if (!userDoc.exists()) {
-      console.error("Solicitação de férias não encontrada. ID:", employeeId);
-      throw new Error("Solicitação de férias não encontrada.");
-    }
-
+    // 1. Atualiza na coleção 'users'
     await updateDoc(userRef, { [`st_parc_${parcSuffix}`]: action });
-    console.log("Solicitação atualizada com sucesso!");
+    console.log("Status atualizado com sucesso na coleção 'users'.");
 
-    await handleUpdateVacationRequest(userRef, `parc_${parcSuffix}`, action)
+    // 2. Atualiza na coleção 'vacations' (atualiza o status da entrada específica no histórico)
+    await handleUpdateVacationRequestInVacationsCollection(employeeId, requestId, startDate, action)
 
-    //Chama as funções para refletir a atualização na tela
-    updateHolidayRequests()
-    populateTable(currentYear)
-
+    // Chama as funções para refletir a atualização na tela
+    updateHolidayRequests();
+    populateTable(currentYear);
   } catch (error) {
-    console.error("Erro ao atualizar a solicitação:", error.message);
+    console.error("Erro ao processar a solicitação de férias:", error.message);
   } finally {
-    loadingScreen.style.display = "none"
+    loadingScreen.style.display = "none";
   }
 }
 
