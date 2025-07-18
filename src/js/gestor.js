@@ -8,7 +8,7 @@ import {
   updateDoc,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import {setYear, currentYear, handleUpdateVacationRequest, showModal } from "../utils";
+import {setYear, currentYear, handleUpdateVacationRequest, showModal, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
 
 let loggedManager;
 
@@ -325,7 +325,7 @@ function createVacationCell(status, date) {
 // Função para criar o bloco de solicitação de férias
 function createHolidayRequestCard(request) {
   return `
-        <div class="bg-gray-50 rounded-lg p-2 flex justify-between items-center mb-2 holiday-request-card" data-request-id="${request.id}" data-parc-suffix="${request.parcSuffix}" data-employee-id="${request.employeeId}">
+        <div class="bg-gray-50 rounded-lg p-2 flex justify-between items-center mb-2 holiday-request-card" data-request-id="${request.id}" data-parc-suffix="${request.parcSuffix}" data-employee-id="${request.employeeId}" data-start-date="${request.startDate}">
             <div>
                 <p class="font-bold text-gray-600">Funcionário: ${request.employeeName}</p>
                 <p class="font-bold text-gray-600">Período: ${request.startDate} a ${request.endDate}</p> <!-- Exibindo direto do banco -->
@@ -424,7 +424,7 @@ async function populateTable(selectedYear) {
 }
 
 // Função para buscar e exibir solicitações de férias
-async function updateHolidayRequests(selectedYear = new Date().getFullYear()) {
+async function updateHolidayRequests() {
   const container = document.getElementById("holidayRequests");
 
   if (!container) {
@@ -448,15 +448,15 @@ async function updateHolidayRequests(selectedYear = new Date().getFullYear()) {
       const employeeId = doc.id;
 
       ["one", "two", "three"].forEach((parcSuffix) => {
-        const days = employeeData[`days_${parcSuffix}`];
         const startDate = employeeData[`parc_${parcSuffix}`];
         const endDate = employeeData[`end_parc_${parcSuffix}`]; // <-- Utilize diretamente do banco
         const status = employeeData[`st_parc_${parcSuffix}`];
+        const uniqueId = employeeData[`id_parc_${parcSuffix}`]
 
-        if (status === "pendente" && startDate) {
+        if (status === "pendente" && startDate && uniqueId) {
           // Exibe as datas diretamente como strings, sem conversão
           pendingRequests.push({
-            id: employeeId,
+            id: uniqueId,
             parcSuffix,
             employeeId,
             employeeName: employeeData.name,
@@ -468,8 +468,6 @@ async function updateHolidayRequests(selectedYear = new Date().getFullYear()) {
       });
     });
 
-    //console.log("Solicitações de férias pendentes:", pendingRequests);
-
     // Atualiza o contêiner com as solicitações de férias pendentes
     container.innerHTML =
       pendingRequests.length > 0
@@ -480,6 +478,7 @@ async function updateHolidayRequests(selectedYear = new Date().getFullYear()) {
     container
       .querySelectorAll(".approve-btn, .disapprove-btn")
       .forEach((btn) => {
+        btn.removeEventListener("click", handleRequestAction)
         btn.addEventListener("click", handleRequestAction);
       });
 
@@ -492,8 +491,8 @@ async function updateHolidayRequests(selectedYear = new Date().getFullYear()) {
 // Função para aprovar ou reprovar pedido de férias
 async function handleRequestAction(event) {
   const action = event.currentTarget.classList.contains("approve-btn")
-    ? "Aprovado"
-    : "Reprovado";
+    ? "aprovada"
+    : "reprovada";
 
   // Pega o ID do funcionário e da solicitação diretamente do botão
   const holidayRequestCard = event.currentTarget.closest(
@@ -501,24 +500,20 @@ async function handleRequestAction(event) {
   );
   const employeeId = holidayRequestCard.dataset.employeeId;
   const parcSuffix = holidayRequestCard.dataset.parcSuffix;
+  const requestId = holidayRequestCard.dataset.requestId;
+  const startDate = holidayRequestCard.dataset.startDate;
 
   // Atualize o status da parcela diretamente no documento `users`
   const userRef = doc(db, "users", employeeId);
 
   try {
-    // Verifique se o documento do funcionário existe
-    const userDoc = await getDoc(userRef);
-
-    if (!userDoc.exists()) {
-      console.error("Solicitação de férias não encontrada. ID:", employeeId);
-      throw new Error("Solicitação de férias não encontrada.");
-    }
+    loadingScreen.style.display = "flex";
 
     // Atualiza o status da parcela específica no Firestore
     await updateDoc(userRef, { [`st_parc_${parcSuffix}`]: action });
     console.log("Solicitação atualizada com sucesso!");
 
-    await handleUpdateVacationRequest(userRef, `parc_${parcSuffix}`, action)
+    await handleUpdateVacationRequestInVacationsCollection(employeeId, requestId, startDate, action)
 
     //Chama as funções para refletir a atualização na tela
     updateHolidayRequests()
@@ -526,6 +521,8 @@ async function handleRequestAction(event) {
 
   } catch (error) {
     console.error("Erro ao atualizar a solicitação:", error.message);
+  } finally {
+    loadingScreen.style.display = "none"
   }
 }
 
