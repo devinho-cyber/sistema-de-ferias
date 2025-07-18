@@ -1,5 +1,5 @@
 import { auth, db, doc, onAuthStateChanged, getDoc, getDocs, collection } from './config.js';
-import { setYear, currentYear, showModal } from '../utils';
+import { setYear, currentYear, showModal, parseDate } from '../utils';
 
 let vacations = []; // Variável para armazenar o ano atual
 const vacationList = document.querySelector("#vacationRequests");
@@ -62,9 +62,21 @@ function createVacationCard(vacation) {
     const card = document.createElement("div");
     card.classList.add("bg-gray-50", "rounded-lg", "p-6", "shadow-md");
 
+    // Correções na criação do card:
+    // 1. `parcela` agora deve vir de `vacation.parcSuffix` para exibir "primeira", "segunda" ou "terceira"
+    //    ou podemos exibir o número da parcela se for passado de alguma forma.
+    //    Vou usar um mapeamento simples de parcSuffix para o nome da parcela.
+    const parcelaNome = {
+      'one': 'Primeira',
+      'two': 'Segunda',
+      'three': 'Terceira'
+    }[vacation.parcSuffix] || 'Desconhecida';
+
+
     card.innerHTML = `
+        <p>Criada em: ${vacation.requestedAt ? parseDate(vacation.requestedAt) : 'N/A'}</p>
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-gray-800">${vacation.parcela}º parcela</h2>
+            <h2 class="text-xl font-semibold text-gray-800">${parcelaNome} parcela</h2>
             <span class="px-3 py-1 ${vacation.status === "reprovada" ? "bg-red-500 text-white" : (vacation.status === "pendente" ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800")} rounded-full text-sm font-medium">
                 Status: ${vacation.status}
             </span>
@@ -72,15 +84,15 @@ function createVacationCard(vacation) {
         <div class="grid lg:grid-cols-3 gap-4">
             <div>
                 <label for="inicio${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Início</label>
-                <input type="date" id="inicio${vacation.id}" value="${vacation.inicio ? formatDateToInput(vacation.inicio) : ''}" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                <input type="date" id="inicio${vacation.id}" value="${vacation.startDate ? formatDateToInput(vacation.startDate) : ''}" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
             </div>
             <div>
                 <label for="dias${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Dias</label>
-                <input type="number" id="dias${vacation.id}" value="${vacation.dias}" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                <input type="number" id="dias${vacation.id}" value="${vacation.days || ''}" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
             </div>
             <div>
                 <label for="termino${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Término</label>
-                <input type="date" id="termino${vacation.id}" value="${vacation.termino ? formatDateToInput(vacation.termino) : ''}" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                <input type="date" id="termino${vacation.id}" value="${vacation.endDate ? formatDateToInput(vacation.endDate) : ''}" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
             </div>
         </div>
     `;
@@ -154,53 +166,26 @@ async function addSelectIfAdminOrManager(userId) {
 function updateVacationDisplay(vacations, year) {
     vacationList.innerHTML = "";
 
-    //Pega apenas os dados do ano selecionado
-    const vacationData = vacations.vacationData?.[year];
-    console.log(vacationData)
+    // Pega apenas os dados do ano selecionado
+    // vacationData é agora um ARRAY de objetos de parcela individual, como { id, parcSuffix, days, startDate, endDate, status, requestedAt }
+    const vacationDataForYear = vacations.vacationData?.[year];
+    console.log("Dados de férias para o ano selecionado:", vacationDataForYear);
 
-    if (!vacationData) {
+    if (!vacationDataForYear || vacationDataForYear.length === 0) {
         vacationList.innerHTML =
             '<p class="text-center col-span-2 text-gray-500">Nenhuma férias solicitada para este ano.</p>';
         return;
     }
 
-    //Monta o array de parcelas a partir do ano
-    vacationData.forEach((req, reqIndex) => {
-        // Monta o array de parcelas dessa solicitação
-        const parcels = [
-            {
-                id: reqIndex * 3 + 1,
-                parcela: 1,
-                status: req.st_parc_one,
-                inicio: req.parc_one,
-                dias: req.days_one,
-                termino: req.end_parc_one,
-            },
-            {
-                id: reqIndex * 3 + 2,
-                parcela: 2,
-                status: req.st_parc_two,
-                inicio: req.parc_two,
-                dias: req.days_two,
-                termino: req.end_parc_two,
-            },
-            {
-                id: reqIndex * 3 + 3,
-                parcela: 3,
-                status: req.st_parc_three,
-                inicio: req.parc_three,
-                dias: req.days_three,
-                termino: req.end_parc_three,
-            },
-        ];
+    // Itera diretamente sobre cada parcela individual no array
+    vacationDataForYear.forEach((parcela) => {
+        // 'parcela' já é um objeto como { id, parcSuffix, days, startDate, endDate, status, requestedAt }
+        // Não precisamos mais montar o array 'parcels' aqui, pois a coleção já armazena individualmente.
 
-        // Renderiza cada parcel dessa solicitação
-        parcels.forEach((vac) => {
-            if (!vac.inicio) return;  // pula parcelas não preenchidas
+        if (!parcela.startDate) return; // Pula parcelas sem data de início (caso haja dados incompletos)
 
-            const vacationCard = createVacationCard(vac);
-            vacationList.appendChild(vacationCard);
-        });
+        const vacationCard = createVacationCard(parcela); // Passa o objeto 'parcela' diretamente
+        vacationList.appendChild(vacationCard);
     });
 }
 

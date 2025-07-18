@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   getDoc,
   setDoc,
+  deleteField,
 } from "./config.js";
 import { currentYear, showModal, hideModal, loadingScreen, handleVacationRequest } from "../utils";
 import { calculateEndDate } from "./user.js";
@@ -108,7 +109,14 @@ async function sendRequest() {
     const dateInputs = document.querySelectorAll(".start-date-input");
 
     // Valida e processa as entradas de férias
-    const { vacationData, emailPeriods } = validateVacationEntries(dayInputs, dateInputs);
+    const {
+      vacationDataForUsersCollection,
+      vacationEntriesForVacationsCollection,
+      emailPeriods
+    } = validateVacationEntries(dayInputs, dateInputs);
+
+    console.log("Dados que serão enviados para a coleção 'users':", vacationDataForUsersCollection); // <--- Adicione esta linha!
+    console.log("Dados que serão enviados para a coleção 'vacations':", vacationEntriesForVacationsCollection)
 
     const user = auth.currentUser;
     if (!user) {
@@ -133,8 +141,8 @@ async function sendRequest() {
     //Envia o email de solicitação de férias
     // await handleVacationRequest(userDoc.data(), emailPeriods)
 
-    await updateDoc(userRef, vacationData);
-    await saveVacationRequestOnFirebase(user.uid, userDoc.data(), vacationData)
+    await updateDoc(userRef, vacationDataForUsersCollection);
+    await saveVacationRequestOnFirebase(user.uid, userDoc.data(), vacationEntriesForVacationsCollection)
     await displayUserVacationData(user.uid);
 
     showModal("Sucesso!", "Solicitação enviada com sucesso!");
@@ -147,35 +155,45 @@ async function sendRequest() {
   }
 }
 
-async function saveVacationRequestOnFirebase(userId, userData, newVacationEntry) {
-  const startDateParts = newVacationEntry.parc_one.split("/"); // formato dd/MM/yyyy
-  const year = startDateParts[2]; // pega o ano
+async function saveVacationRequestOnFirebase(userId, userData, newVacationEntries) {
+  try {
+    const year = newVacationEntries[0].startDate.split("/")[2]
 
-  const vacationRef = doc(db, "vacations", userId);
-  const existingDoc = await getDoc(vacationRef);
-  const existingData = existingDoc.exists() ? existingDoc.data() : {};
+    const vacationRef = doc(db, "vacations", userId);
+    const existingDoc = await getDoc(vacationRef);
+    const existingData = existingDoc.exists() ? existingDoc.data() : {};
 
-  // Garante que já exista um objeto vacationData
-  const previousVacationData = existingData.vacationData || {};
-  const previousYearData = previousVacationData[year] || [];
+    // Garante que a estrutura de vacationData e do ano exista
+    const previousVacationData = existingData.vacationData || {};
+    const previousYearData = previousVacationData[year] || [];
 
-  // Adiciona a nova solicitação ao array do ano
-  const updatedYearData = [...previousYearData, newVacationEntry];
+    const updatedYearData = [...previousYearData];
+    newVacationEntries.forEach(newEntry => {
+      // const isAlreadyInHistory = updatedYearData.some(entry => entry.id === newEntry.id);
+      // if (!isAlreadyInHistory) {
+      updatedYearData.push(newEntry);
+      // }
+    })
 
-  const updatedVacationData = {
-    ...previousVacationData,
-    [year]: updatedYearData, // atualiza ou cria o dado para o ano correspondente
-  };
+    const updatedVacationData = {
+      ...previousVacationData,
+      [year]: updatedYearData,
+    };
 
-  const vacationRequest = {
-    userId,
-    user: {
-      name: userData.name,
-    },
-    vacationData: updatedVacationData,
-  };
+    const vacationRequest = {
+      userId,
+      user: {
+        name: userData.name,
+        agency: userData.agency,
+      },
+      vacationData: updatedVacationData,
+    };
 
-  await setDoc(vacationRef, vacationRequest, { merge: true });
+    await setDoc(vacationRef, vacationRequest, { merge: true });
+  } catch (error) {
+    console.error("Erro ao salvar a solicitação de férias no Firebase:", error);
+    throw error
+  }
 }
 
 function validateVacationEntries(dayInputs, dateInputs) {
@@ -185,21 +203,14 @@ function validateVacationEntries(dayInputs, dateInputs) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const vacationData = {
-    days_one: null,
-    days_two: null,
-    days_three: null,
-    parc_one: null,
-    parc_two: null,
-    parc_three: null,
-    st_parc_one: null,
-    st_parc_two: null,
-    st_parc_three: null,
-    end_parc_one: null,
-    end_parc_two: null,
-    end_parc_three: null,
+  const vacationDataForUsersCollection = {
     lastUpdated: today.toISOString(),
   };
+
+  // Array para armazenar as entradas de férias formatadas, incluindo o ID único
+  const vacationEntriesForVacationsCollection = [];
+
+  let parcelsFilled = 0
 
   for (let i = 0; i < dayInputs.length; i++) {
     const dayInput = dayInputs[i];
@@ -221,7 +232,7 @@ function validateVacationEntries(dayInputs, dateInputs) {
       }
 
       totalDays += dayValue;
-      if (totalDays > maxDays) {
+      if (totalDays > maxDays) { // Assumindo 'maxDays' está definido globalmente
         throw new Error("A quantidade total de dias não pode ultrapassar 30.");
       }
 
@@ -230,34 +241,55 @@ function validateVacationEntries(dayInputs, dateInputs) {
       const formattedStartDate = formatDateToBR(startDate);
       const formattedEndDate = formatDateToBR(endDate);
 
-      // Atualiza o objeto vacationData conforme a parcela
-      if (i === 0) {
-        vacationData.days_one = dayValue;
-        vacationData.parc_one = formattedStartDate;
-        vacationData.end_parc_one = formattedEndDate;
-        vacationData.st_parc_one = "pendente";
-      } else if (i === 1) {
-        vacationData.days_two = dayValue;
-        vacationData.parc_two = formattedStartDate;
-        vacationData.end_parc_two = formattedEndDate;
-        vacationData.st_parc_two = "pendente";
-      } else if (i === 2) {
-        vacationData.days_three = dayValue;
-        vacationData.parc_three = formattedStartDate;
-        vacationData.end_parc_three = formattedEndDate;
-        vacationData.st_parc_three = "pendente";
-      }
+      // Gera um ID único para esta parcela de férias
+      const uniqueId = crypto.randomUUID();
+
+      const parcSuffix = i === 0 ? "one" : i === 1 ? "two" : "three";
+
+      // Adiciona os dados ao objeto vacationData para a coleção 'users'
+      vacationDataForUsersCollection[`days_${parcSuffix}`] = dayValue;
+      vacationDataForUsersCollection[`parc_${parcSuffix}`] = formattedStartDate;
+      vacationDataForUsersCollection[`end_parc_${parcSuffix}`] = formattedEndDate;
+      vacationDataForUsersCollection[`st_parc_${parcSuffix}`] = "pendente";
+      vacationDataForUsersCollection[`id_parc_${parcSuffix}`] = uniqueId;
+
+      // Prepara o objeto para a coleção 'vacations'
+      vacationEntriesForVacationsCollection.push({
+        id: uniqueId, // ID único da parcela
+        parcSuffix: parcSuffix, // Para identificar qual parcela é
+        days: dayValue,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        status: "pendente",
+        requestedAt: new Date().toISOString(),
+      });
 
       emailPeriods.push(`${formattedStartDate} à ${formattedEndDate}`);
       lastEndDate = endDate;
+      parcelsFilled++
     }
+  }
+
+  const allParcSuffixes = ["one", "two", "three"];
+  for (let i = parcelsFilled; i < allParcSuffixes.length; i++) {
+    const suffixToDelete = allParcSuffixes[i];
+    vacationDataForUsersCollection[`days_${suffixToDelete}`] = deleteField()
+    vacationDataForUsersCollection[`parc_${suffixToDelete}`] = deleteField()
+    vacationDataForUsersCollection[`end_parc_${suffixToDelete}`] = deleteField()
+    vacationDataForUsersCollection[`st_parc_${suffixToDelete}`] = deleteField()
+    vacationDataForUsersCollection[`id_parc_${suffixToDelete}`] = deleteField()
   }
 
   if (totalDays !== maxDays) {
     throw new Error("A quantidade total de dias deve ser exatamente 30.");
   }
 
-  return { vacationData, emailPeriods };
+  // Retorna vacationData para 'users' e vacationEntriesForVacationsCollection para 'vacations'
+  return {
+    vacationDataForUsersCollection,
+    vacationEntriesForVacationsCollection,
+    emailPeriods
+  };
 }
 
 // Exibição inicial
@@ -297,43 +329,35 @@ function createVacationCard(vacation) {
   return `
         <div class="bg-gray-50 rounded-lg p-6 shadow-md">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold text-gray-800">${
-                  vacation.parcela
-                }ª parcela</h2>
-                <span class="px-3 py-1 ${
-                  vacation.status === "reprovada"
-                    ? "bg-red-500 text-white"
-                    : vacation.status === "pendente"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-green-100 text-green-800"
-                } rounded-full text-sm font-medium">
+                <h2 class="text-xl font-semibold text-gray-800">${vacation.parcela
+    }ª parcela</h2>
+                <span class="px-3 py-1 ${vacation.status === "reprovada"
+      ? "bg-red-500 text-white"
+      : vacation.status === "pendente"
+        ? "bg-yellow-100 text-yellow-800"
+        : "bg-green-100 text-green-800"
+    } rounded-full text-sm font-medium">
                     Status: ${vacation.status}
                 </span>
             </div>
             <div class="grid grid-cols-3 gap-4">
                 <div>
-                    <label for="inicio${
-                      vacation.id
-                    }" class="block text-sm font-medium text-gray-700 mb-1">Início</label>
-                    <input type="date" id="inicio${vacation.id}" value="${
-    vacation.inicio ? formatDateToInput(vacation.inicio) : ""
-  }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                    <label for="inicio${vacation.id
+    }" class="block text-sm font-medium text-gray-700 mb-1">Início</label>
+                    <input type="date" id="inicio${vacation.id}" value="${vacation.inicio ? formatDateToInput(vacation.inicio) : ""
+    }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
                 </div>
                 <div>
-                    <label for="dias${
-                      vacation.id
-                    }" class="block text-sm font-medium text-gray-700 mb-1">Dias</label>
-                    <input type="number" id="dias${vacation.id}" value="${
-    vacation.dias
-  }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                    <label for="dias${vacation.id
+    }" class="block text-sm font-medium text-gray-700 mb-1">Dias</label>
+                    <input type="number" id="dias${vacation.id}" value="${vacation.dias
+    }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
                 </div>
                 <div>
-                    <label for="termino${
-                      vacation.id
-                    }" class="block text-sm font-medium text-gray-700 mb-1">Término</label>
-                    <input type="date" id="termino${vacation.id}" value="${
-    vacation.termino ? formatDateToInput(vacation.termino) : ""
-  }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                    <label for="termino${vacation.id
+    }" class="block text-sm font-medium text-gray-700 mb-1">Término</label>
+                    <input type="date" id="termino${vacation.id}" value="${vacation.termino ? formatDateToInput(vacation.termino) : ""
+    }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
                 </div>
             </div>
         </div>
