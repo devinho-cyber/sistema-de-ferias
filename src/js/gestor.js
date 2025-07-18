@@ -1,12 +1,4 @@
-import { db, doc, auth } from "./config.js";
-import {
-  collection,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  updateDoc,
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { db, doc, auth, collection, getDoc, getDocs, query, where, updateDoc } from "./config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {setYear, currentYear, handleUpdateVacationRequest, showModal, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
 
