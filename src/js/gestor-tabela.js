@@ -1,4 +1,4 @@
-import { hideModal, showModal } from "../utils";
+import { hideModal, showModal, validateCreateUserInputs } from "../utils";
 import { clearModal } from "../utils/clearModal";
 import { auth, collection, db, doc, getDoc, getDocs, onAuthStateChanged, orderBy, query, where } from "./config";
 
@@ -193,11 +193,13 @@ function openCreateUserModal() {
                 <label for="password" class="font-bold">Senha:</label>
                 <input id="password" type="password" placeholder="Mínimo 6 caracteres"
                     class="border p-2 w-full rounded-md">
+                <span class="passwordWarning text-red-500" style="display: none;">As senhas não coincidem</span>
             </div>
             <div>
                 <label for="confirmPassword" class="font-bold">Confirmar senha:</label>
                 <input id="confirmPassword" type="password" placeholder="Confirme a Senha"
                     class="border p-2 w-full rounded-md">
+                <span class="passwordWarning text-red-500" style="display: none;">As senhas não coincidem</span>
             </div>
         </div>
     `;
@@ -234,38 +236,7 @@ async function createUser() {
     const confirmPassword = document.getElementById('confirmPassword').value;
     const agency = document.getElementById('user-agency').value;
 
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@inss\.gov\.br$/;
-    const specialCharRegex = /[!@#$%&*]/;
-
-    if (!name || !email || !password || !confirmPassword) {
-        clearModal()
-        showModal("Atenção!", "Todos os campos devem ser preenchidos.", "attention");
-        return;
-    }
-
-    if (password !== confirmPassword) {
-        clearModal()
-        showModal("As senhas não coincidem.", "", "attention");
-        return;
-    }
-
-    if (password.length < 6) {
-        clearModal()
-        showModal("Senha muito curta!", "A senha deve conter pelo menos 6 caracteres.", "attention");
-        return;
-    }
-
-    if (!specialCharRegex.test(password)) {
-        clearModal()
-        showModal("Senha inválida!", "A senha deve conter pelo menos um caractere especial (!, @, #, $, %, &, *).", "attention");
-        return;
-    }
-
-    if (!emailRegex.test(email)) {
-        clearModal()
-        showModal("Email inválido", "Somente e-mail institucional (@inss.gov.br) é aceito.", "attention");
-        return;
-    }
+    validateCreateUserInputs(name, email, password, confirmPassword)
 
     try {
         const currentUser = auth.currentUser
