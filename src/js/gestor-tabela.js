@@ -1,6 +1,6 @@
 import { hideModal, showModal } from "../utils";
 import { clearModal } from "../utils/clearModal";
-import { auth, collection, db, doc, getDoc, getDocs, onAuthStateChanged, query, where } from "./config";
+import { auth, collection, db, doc, getDoc, getDocs, onAuthStateChanged, orderBy, query, where } from "./config";
 
 let loggedManager;
 
@@ -42,7 +42,8 @@ async function fetchEmployees() {
   const q = query(
     employeesRef,
     where("agency", "==", loggedManager.agency),
-    where("permission", "==", "user")
+    where("permission", "==", "user"),
+    orderBy("name", "asc")
   );
 
   const snapshot = await getDocs(q);

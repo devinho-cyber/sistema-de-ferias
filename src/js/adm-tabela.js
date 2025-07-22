@@ -1,16 +1,16 @@
 import { showModal, hideModal } from '../utils';
 import { clearModal } from '../utils/clearModal.js';
 import { auth, db } from './config.js';
-import { collection, doc, updateDoc, getDocs, query, where, } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { collection, doc, updateDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 async function fetchEmployees(selectedAgency) {
     const employeesRef = collection(db, 'users');
     let q;
 
     if (selectedAgency) {
-        q = query(employeesRef, where('agency', '==', selectedAgency));
+        q = query(employeesRef, where('agency', '==', selectedAgency), orderBy("name", "asc"));
     } else {
-        q = employeesRef; // Se nenhuma agência estiver selecionada, pegar todos
+        q = query(employeesRef, orderBy("name", "asc")); // Se nenhuma agência estiver selecionada, pegar todos
     }
 
     const snapshot = await getDocs(q);

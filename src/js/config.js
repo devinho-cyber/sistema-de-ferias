@@ -17,7 +17,8 @@ import {
   getDoc,
   query,
   where,
-  deleteField
+  deleteField,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { getFunctions } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-functions.js";
 
@@ -58,5 +59,6 @@ export {
   getDoc,
   query,
   where,
-  deleteField
+  deleteField,
+  orderBy
 };
