@@ -13,6 +13,7 @@ export default defineConfig({
         recovery: "recuperar.html",
         user: "user.html",
         gestor: "gestor.html",
+        gestorTabela: "gestor-tabela.html",
         admin: "admin.html",
         adminTabela: "admin-tabela.html",
         historicoFerias: "historico-ferias.html",
