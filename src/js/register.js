@@ -1,4 +1,4 @@
-import { showModal } from "../utils";
+import { showModal } from "../components/modal.js";
 import { 
     auth, 
     createUserWithEmailAndPassword, 
