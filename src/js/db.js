@@ -8,8 +8,9 @@ import {
   setDoc,
   deleteField,
 } from "./config.js";
-import { currentYear, showModal, hideModal, loadingScreen, handleVacationRequest } from "../utils";
+import { currentYear, loadingScreen, handleVacationRequest } from "../utils";
 import { calculateEndDate } from "./user.js";
+import { hideModal, showModal } from "../components/modal.js";
 
 const maxDays = 30; // Define o valor máximo de dias permitido
 let vacationData = [];

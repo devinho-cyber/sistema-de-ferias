@@ -1,4 +1,5 @@
-import { showModal } from "../utils";
+import { showModal } from "../components/modal";
+
 
 const maxInputs = 3;
 const maxDays = 30;

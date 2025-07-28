@@ -1,6 +1,7 @@
 import { db, doc, auth, collection, getDoc, getDocs, query, where, updateDoc } from "./config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import {setYear, currentYear, handleUpdateVacationRequest, showModal, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
+import {setYear, currentYear, handleUpdateVacationRequest, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
+import { showModal } from "../components/modal.js";
 
 let loggedManager;
 

@@ -1,5 +1,5 @@
-import { clearModal } from "./clearModal";
-import { showModal } from "./modal";
+import { clearModal } from "../components/clearModal.js";
+import { showModal } from "../components/modal.js";
 
 export function validateCreateUserInputs(name, email, password, confirmPassword) {
     const passwordWarning = document.querySelectorAll('.passwordWarning')

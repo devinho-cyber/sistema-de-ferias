@@ -1,6 +1,7 @@
-import { hideModal, showModal, validateCreateUserInputs } from "../utils";
-import { clearModal } from "../utils/clearModal";
+import { validateCreateUserInputs } from "../utils";
+import { clearModal } from "../components/clearModal.js";
 import { auth, collection, db, doc, getDoc, getDocs, onAuthStateChanged, orderBy, query, where } from "./config";
+import { hideModal, showModal } from "../components/modal.js";
 
 let loggedManager;
 

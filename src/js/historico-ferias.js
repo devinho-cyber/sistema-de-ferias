@@ -1,5 +1,6 @@
 import { auth, db, doc, onAuthStateChanged, getDoc, getDocs, collection } from './config.js';
-import { setYear, currentYear, showModal, parseDate } from '../utils';
+import { setYear, currentYear, parseDate } from '../utils';
+import { showModal } from '../components/modal.js';
 
 let vacations = []; // Variável para armazenar o ano atual
 const vacationList = document.querySelector("#vacationRequests");

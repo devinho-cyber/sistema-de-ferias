@@ -1,4 +1,4 @@
-import { showModal } from "../utils/modal";
+import { showModal } from "../components/modal";
 import { sendEmail } from "../utils/sendEmail";
 
 document.querySelector('form').addEventListener('submit', async (event) => {

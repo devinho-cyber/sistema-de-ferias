@@ -8,7 +8,8 @@ import {
   updateDoc,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { setYear, currentYear, handleUpdateVacationRequest, exportSpredsheet, loadingScreen, showModal, handleUpdateVacationRequestInVacationsCollection } from "../utils";
+import { setYear, currentYear, handleUpdateVacationRequest, exportSpredsheet, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
+import { showModal } from "../components/modal.js";
 
 let loggedManager;
 
