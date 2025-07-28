@@ -9,7 +9,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "index.html",
-        register: "register.html",
         recovery: "recuperar.html",
         user: "user.html",
         gestor: "gestor.html",
