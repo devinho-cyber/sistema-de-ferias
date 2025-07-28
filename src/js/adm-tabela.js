@@ -1,7 +1,9 @@
-import { showModal, hideModal, validateCreateUserInputs } from '../utils';
-import { clearModal } from '../utils/clearModal.js';
+import { validateCreateUserInputs } from '../utils';
+import { clearModal } from '../components/clearModal.js';
+import { deleteUser } from '../utils/deleteUser.js';
 import { auth, db } from './config.js';
 import { collection, doc, updateDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { hideModal, showModal } from '../components/modal.js';
 
 async function fetchEmployees(selectedAgency) {
     const employeesRef = collection(db, 'users');
@@ -67,23 +69,36 @@ async function populateTable() {
         row.appendChild(permissionCell);
 
         const actionsCell = document.createElement('td');
-        actionsCell.className = 'flex justify-center mt-2';
+        actionsCell.className = 'flex justify-center mt-2 gap-2';
         actionsCell.innerHTML = `
-            <button class="edit-user-btn cursor-pointer"
+            <button class="edit-user-btn cursor-pointer" title="Editar"
                 data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
                 <i data-lucide="user-pen" class="text-gray-500"></i>
-            </button>`;
+            </button>
+            <button class="delete-user-btn **:cursor-pointer" title="Excluir"
+                data-user='{"userUid":"${employee.id}"}'>
+                <i data-lucide="x" class="text-red-700"></i>
+            </button>
+            `;
         row.appendChild(actionsCell);
 
         tableBody.appendChild(row);
     });
 
     const editButtons = document.querySelectorAll('.edit-user-btn');
-
     editButtons.forEach(button => {
         button.addEventListener('click', function () {
             const userData = JSON.parse(this.getAttribute('data-user'));
             openUserEditModal(userData);
+        })
+    });
+
+    const deleteButtons = document.querySelectorAll('.delete-user-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', async function () {
+            const userData = JSON.parse(this.getAttribute('data-user'));
+            await deleteUser(userData);
+            await populateTable()
         })
     });
 
