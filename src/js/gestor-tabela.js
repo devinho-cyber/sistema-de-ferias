@@ -2,54 +2,55 @@ import { validateCreateUserInputs } from "../utils";
 import { clearModal } from "../components/clearModal.js";
 import { auth, collection, db, doc, getDoc, getDocs, onAuthStateChanged, orderBy, query, where } from "./config";
 import { hideModal, showModal } from "../components/modal.js";
+import { deleteUser } from "../utils/deleteUser.js";
 
 let loggedManager;
 
 // Função para verificar a permissão do usuário e capturar o userId
 async function checkUserPermission() {
-  return new Promise((resolve, reject) => {
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userId = user.uid;
-        const userRef = doc(db, "users", userId);
-        const userSnap = await getDoc(userRef);
+    return new Promise((resolve, reject) => {
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userId = user.uid;
+                const userRef = doc(db, "users", userId);
+                const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          if (userData.permission === "gestor") {
-            loggedManager = { id: userSnap.id, ...userData };
-            resolve(loggedManager);
-          } else {
-            reject("Usuário logado não é um gestor!");
-          }
-        } else {
-          reject("Gestor não encontrado!");
-        }
-      } else {
-        reject("Nenhum usuário autenticado!");
-      }
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    if (userData.permission === "gestor") {
+                        loggedManager = { id: userSnap.id, ...userData };
+                        resolve(loggedManager);
+                    } else {
+                        reject("Usuário logado não é um gestor!");
+                    }
+                } else {
+                    reject("Gestor não encontrado!");
+                }
+            } else {
+                reject("Nenhum usuário autenticado!");
+            }
+        });
     });
-  });
 }
 
 // Função para buscar funcionários com permissão 'user' da mesma agência que o gestor
 async function fetchEmployees() {
-  if (!loggedManager) {
-    console.error("Gestor não está logado ou não foi encontrado.");
-    return [];
-  }
+    if (!loggedManager) {
+        console.error("Gestor não está logado ou não foi encontrado.");
+        return [];
+    }
 
-  const employeesRef = collection(db, "users");
-  const q = query(
-    employeesRef,
-    where("agency", "==", loggedManager.agency),
-    where("permission", "==", "user"),
-    orderBy("name", "asc")
-  );
+    const employeesRef = collection(db, "users");
+    const q = query(
+        employeesRef,
+        where("agency", "==", loggedManager.agency),
+        where("permission", "==", "user"),
+        orderBy("name", "asc")
+    );
 
-  const snapshot = await getDocs(q);
-  const employees = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  return employees;
+    const snapshot = await getDocs(q);
+    const employees = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return employees;
 }
 
 async function populateTable() {
@@ -90,12 +91,17 @@ async function populateTable() {
         row.appendChild(emailCell);
 
         const actionsCell = document.createElement('td');
-        actionsCell.className = 'flex justify-center mt-2';
+        actionsCell.className = 'flex justify-center mt-2 gap-2';
         actionsCell.innerHTML = `
             <button class="edit-user-btn cursor-pointer"
                 data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
                 <i data-lucide="user-pen" class="text-gray-500"></i>
-            </button>`;
+            </button>
+            <button class="delete-user-btn cursor-pointer" title="Excluir"
+                data-user='{"userUid":"${employee.id}"}'>
+                <i data-lucide="x" class="text-red-700"></i>
+            </button>
+            `;
         row.appendChild(actionsCell);
 
         tableBody.appendChild(row);
@@ -107,6 +113,15 @@ async function populateTable() {
         button.addEventListener('click', function () {
             const userData = JSON.parse(this.getAttribute('data-user'));
             openUserEditModal(userData);
+        })
+    });
+
+    const deleteButtons = document.querySelectorAll('.delete-user-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', async function () {
+            const userData = JSON.parse(this.getAttribute('data-user'));
+            await deleteUser(userData);
+            await populateTable()
         })
     });
 
