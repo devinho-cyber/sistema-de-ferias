@@ -1,5 +1,5 @@
 import { auth } from "../js/config"
-import { clearModal } from "./clearModal"
+import { clearModal } from "../components/clearModal.js"
 import { hideModal, showModal } from "../components/modal"
 
 export async function deleteUser(userId) {
