@@ -57,6 +57,20 @@ A estrutura de pastas do projeto está organizada da seguinte forma, focando nos
 -   [x] **Notificações por Email:** Envio automático de emails (via EmailJS) para confirmar solicitações e status.
 -   [x] **Exportação de Relatórios:** Gestores podem exportar dados em planilhas.
 
+## 📸 Demonstração e Telas
+
+### Demonstração em Vídeo
+![Demonstração do Projeto](https://github.com/devinho-cyber/sistema-de-ferias/blob/main/Sistema-gif.gif?raw=true)
+
+### Tela de Login
+![Tela de Login](https://github.com/devinho-cyber/sistema-de-ferias/blob/main/login.png?raw=true)
+
+### Dashboard do Usuário
+![Dashboard do Usuário](https://github.com/devinho-cyber/sistema-de-ferias/blob/main/pedido-de-ferias.png?raw=true)
+
+### Painel do Administrador
+![Painel do Administrador](https://github.com/devinho-cyber/sistema-de-ferias/blob/main/lista-admin.png?raw=true)
+
 ## 📧 Contato
 
 Este projeto foi desenvolvido por:
