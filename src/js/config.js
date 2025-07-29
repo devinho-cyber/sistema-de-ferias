@@ -49,7 +49,6 @@ export {
   collection,
   serverTimestamp,
   updateDoc,
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
   getFirestore,
