@@ -1,4 +1,4 @@
-import { validateCreateUserInputs } from '../utils';
+import { searchEmployees, validateCreateUserInputs } from '../utils';
 import { clearModal } from '../components/clearModal.js';
 import { deleteUser } from '../utils/deleteUser.js';
 import { auth, db } from './config.js';
@@ -20,9 +20,20 @@ async function fetchEmployees(selectedAgency) {
     return employees;
 }
 
-async function populateTable() {
+const searchInput = document.getElementById("searchInput")
+
+searchInput.addEventListener('keyup', async () => {
+    const searchTerm = searchInput.value;
     const selectedAgency = document.getElementById('Agency').value;
-    const employees = await fetchEmployees(selectedAgency);
+
+    const employeesData = await fetchEmployees(selectedAgency);
+    const filteredEmployees = searchEmployees(employeesData, searchTerm);
+    await populateTable(filteredEmployees);
+})
+
+async function populateTable(filteredEmployees) {
+    const selectedAgency = document.getElementById('Agency').value;
+    const employees = filteredEmployees ? filteredEmployees : await fetchEmployees(selectedAgency);
     const tableBody = document.getElementById('employeeTableBody');
 
     if (!tableBody) {
