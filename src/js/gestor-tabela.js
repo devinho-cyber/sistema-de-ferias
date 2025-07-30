@@ -186,11 +186,17 @@ async function editUser(userId) {
     const email = document.getElementById('user-email').value;
 
     // Atualiza os dados no Firestore
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-        name: name,
-        email: email,
-    })
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            name: name,
+            email: email,
+        })
+    } catch (error) {
+        console.error("Erro ao editar usuário:", error)
+        clearModal()
+        showModal("Erro ao cadastrar!", error.message, "attention")
+    }
 
     await populateTable();
 }
