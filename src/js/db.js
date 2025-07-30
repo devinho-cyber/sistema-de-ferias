@@ -116,9 +116,6 @@ async function sendRequest() {
       emailPeriods
     } = validateVacationEntries(dayInputs, dateInputs);
 
-    console.log("Dados que serão enviados para a coleção 'users':", vacationDataForUsersCollection); // <--- Adicione esta linha!
-    console.log("Dados que serão enviados para a coleção 'vacations':", vacationEntriesForVacationsCollection)
-
     const user = auth.currentUser;
     if (!user) {
       showModal("Erro!", "Usuário não autenticado.", "error");
