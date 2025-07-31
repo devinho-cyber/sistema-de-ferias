@@ -80,11 +80,15 @@ async function populateTable(filteredEmployees) {
         row.appendChild(permissionCell);
 
         const actionsCell = document.createElement('td');
-        actionsCell.className = 'flex justify-center mt-2 gap-2';
+        actionsCell.className = 'flex justify-center mt-2 gap-3';
         actionsCell.innerHTML = `
             <button class="edit-user-btn cursor-pointer" title="Editar"
                 data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
                 <i data-lucide="user-pen" class="text-gray-500"></i>
+            </button>
+            <button class="edit-user-btn cursor-pointer" title="Editar Férias"
+                data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
+                <i data-lucide="plane-takeoff" class="text-gray-500"></i>
             </button>
             <button class="delete-user-btn **:cursor-pointer" title="Excluir"
                 data-user='{"userUid":"${employee.id}"}'>
@@ -365,8 +369,7 @@ async function editUser(userId) {
     });
 
     // Recarrega a tabela
-    const selectedAgency = document.getElementById('Agency').value;
-    await populateTable(selectedAgency);
+    await populateTable();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
