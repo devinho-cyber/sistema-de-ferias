@@ -1,9 +1,10 @@
-import { searchEmployees, validateCreateUserInputs } from '../utils';
+import { loadingScreen, searchEmployees, validateCreateUserInputs } from '../utils';
 import { clearModal } from '../components/clearModal.js';
 import { deleteUser } from '../utils/deleteUser.js';
-import { auth, db } from './config.js';
+import { auth, db, getDoc } from './config.js';
 import { collection, doc, updateDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { hideModal, showModal } from '../components/modal.js';
+import { openVacationEditModal } from '../utils/editUserVacation.js';
 
 async function fetchEmployees(selectedAgency) {
     const employeesRef = collection(db, 'users');
@@ -86,7 +87,7 @@ async function populateTable(filteredEmployees) {
                 data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
                 <i data-lucide="user-pen" class="text-gray-500"></i>
             </button>
-            <button class="edit-user-btn cursor-pointer" title="Editar Férias"
+            <button class="edit-vacation-btn cursor-pointer" title="Editar Férias"
                 data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
                 <i data-lucide="plane-takeoff" class="text-gray-500"></i>
             </button>
@@ -106,6 +107,13 @@ async function populateTable(filteredEmployees) {
             const userData = JSON.parse(this.getAttribute('data-user'));
             openUserEditModal(userData);
         })
+    });
+
+    document.querySelectorAll('.edit-vacation-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const userData = JSON.parse(this.getAttribute('data-user'));
+            openVacationEditModal(userData);
+        });
     });
 
     const deleteButtons = document.querySelectorAll('.delete-user-btn');
@@ -189,6 +197,25 @@ function openUserEditModal(userData) {
     document.getElementById('cancel-edit').addEventListener('click', hideModal);
 }
 
+async function editUser(userId) {
+    const name = document.getElementById('user-name').value;
+    const agency = document.getElementById('user-agency').value;
+    const email = document.getElementById('user-email').value;
+    const permission = document.getElementById('user-permission').value;
+
+    // Atualiza os dados no Firestore
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+        name: name,
+        agency: agency,
+        email: email,
+        permission: permission
+    });
+
+    // Recarrega a tabela
+    await populateTable();
+}
+
 document.getElementById('create-user').addEventListener('click', openCreateUserModal)
 
 // Adicione esta função auxiliar para a lógica do campo "Setor"
@@ -216,7 +243,6 @@ function setupAgencySectorLogic() {
         });
     }
 }
-
 
 function openCreateUserModal() {
     const modalTitle = "Cadastrar Usuário";
@@ -351,25 +377,6 @@ async function createUser() {
         clearModal()
         showModal("Erro ao cadastrar!", error.message, "attention")
     }
-}
-
-async function editUser(userId) {
-    const name = document.getElementById('user-name').value;
-    const agency = document.getElementById('user-agency').value;
-    const email = document.getElementById('user-email').value;
-    const permission = document.getElementById('user-permission').value;
-
-    // Atualiza os dados no Firestore
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-        name: name,
-        agency: agency,
-        email: email,
-        permission: permission
-    });
-
-    // Recarrega a tabela
-    await populateTable();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

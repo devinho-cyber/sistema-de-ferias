@@ -403,7 +403,7 @@ async function updateVacationInstallment(installmentId, newStartDate, newDays) {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado.");
 
-    // --- TRADUÇÃO DO ID PARA O SUFIXO --- // <-- MUDANÇA AQUI
+    // --- TRADUÇÃO DO ID PARA O SUFIXO
     const idToSuffixMap = {
       '1': 'one',
       '2': 'two',
@@ -414,80 +414,88 @@ async function updateVacationInstallment(installmentId, newStartDate, newDays) {
       throw new Error("ID de parcela inválido para mapeamento: " + installmentId);
     }
 
-    // 1. Mapeia o ID da parcela para os nomes dos campos no Firestore
-    const fieldMappings = getInstallmentFieldMappings(installmentId);
-    if (!fieldMappings) {
-      throw new Error("ID de parcela inválido.");
-    }
-
     // 2. Calcula a nova data de término
     const newEndDate = calculateAndFormatEndDate(newStartDate, newDays);
     const year = newStartDate.split('-')[0];
 
-    // --- VALIDAÇÃO DE SOBREPOSIÇÃO ---
+    //VALIDAÇÃO DE SOBREPOSIÇÃO (COLEÇÃO 'users')
+    const userRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) {
+      throw new Error("Documento do usuário não encontrado para validação.");
+    }
+    const userData = userDoc.data();
+
+    const newStartDateObj = new Date(newStartDate + 'T00:00:00');
+    const newEndDateObj = parsePtBrDate(newEndDate);
+
+    const allParcelIds = ['1', '2', '3'];
+
+    for (const parcelIdToCheck of allParcelIds) {
+      // Pula a verificação da própria parcela que estamos editando
+      if (parcelIdToCheck === installmentId) {
+        continue;
+      }
+
+      // Pega os nomes dos campos (ex: 'parc_one', 'end_parc_one') para a parcela que estamos checando
+      const fieldMappings = getInstallmentFieldMappings(parcelIdToCheck);
+      const existingStartDateStr = userData[fieldMappings.start];
+      const existingEndDateStr = userData[fieldMappings.end];
+
+      // Se a parcela a ser checada não tiver uma data de início, ela não existe
+      if (!existingStartDateStr) {
+        continue;
+      }
+
+      // Converte as datas existentes para comparação
+      const existingStartDateObj = parsePtBrDate(existingStartDateStr);
+      const existingEndDateObj = parsePtBrDate(existingEndDateStr);
+
+      if (newStartDateObj <= existingEndDateObj && existingStartDateObj <= newEndDateObj) {
+        throw new Error(`O período solicitado se sobrepõe com a ${parcelIdToCheck}ª parcela já existente.`);
+      }
+    }
+
     const vacationRef = doc(db, "vacations", user.uid);
     const vacationDoc = await getDoc(vacationRef);
 
-    if (vacationDoc.exists()) {
-      const allYearData = vacationDoc.data().vacationData[year] || [];
-      // Converte o novo período para objetos Date para comparação
-      const newStartDateObj = new Date(newStartDate + 'T00:00:00');
-      const newEndDateObj = parsePtBrDate(newEndDate);
-
-      for (const existingEntry of allYearData) {
-        // Pula a verificação da própria parcela que estamos editando
-        if (existingEntry.parcSuffix == parcSuffix) {
-          continue;
-        }
-
-        const existingStartDateObj = parsePtBrDate(existingEntry.startDate);
-        const existingEndDateObj = parsePtBrDate(existingEntry.endDate);
-
-        // Lógica de verificação de sobreposição:
-        // (StartA <= EndB) and (StartB <= EndA)
-        if (newStartDateObj <= existingEndDateObj && existingStartDateObj <= newEndDateObj) {
-          throw new Error(`O período solicitado se sobrepõe com um período existente.`);
-        }
-      }
+    if (!vacationDoc.exists()) {
+      throw new Error("Documento do usuário não encontrado para validação.");
     }
 
-    // --- ATUALIZAÇÃO DA COLEÇÃO 'users' ---
-    const userRef = doc(db, "users", user.uid);
+    const vacationData = vacationDoc.data().vacationData;
+    const yearData = vacationData[year] || [];
+
+    const entryIndex = yearData.findIndex(entry => entry.parcSuffix == parcSuffix);
+
+    if (entryIndex === -1) {
+      throw new Error(`Erro crítico: A parcela não foi encontrada no ano ${year}.`);
+    }
+
+    // Atualiza os campos do objeto no array
+    yearData[entryIndex].startDate = newStartDate.split('-').reverse().join('/');
+    yearData[entryIndex].days = newDays;
+    yearData[entryIndex].endDate = newEndDate;
+    yearData[entryIndex].status = 'pendente';
+    yearData[entryIndex].requestedAt = new Date().toISOString();
+
+    // Prepara a atualização para o Firestore (muito mais simples agora)
+    const dataToCommit = {
+      [`vacationData.${year}`]: yearData
+    };
+
+    // Atualiza a coleção 'users'
+    const fieldMappings = getInstallmentFieldMappings(installmentId);
     const userDataToUpdate = {
-      [fieldMappings.start]: newStartDate.split('-').reverse().join('/'), // Formato dd/mm/yyyy
+      [fieldMappings.start]: newStartDate.split('-').reverse().join('/'),
       [fieldMappings.days]: newDays,
       [fieldMappings.end]: newEndDate,
-      [fieldMappings.status]: 'pendente' // Uma edição requer nova aprovação
+      [fieldMappings.status]: 'pendente'
     };
     await updateDoc(userRef, userDataToUpdate);
 
-    // --- ATUALIZAÇÃO DA COLEÇÃO 'vacations' ---
-    if (vacationDoc.exists()) {
-      const vacationData = vacationDoc.data().vacationData;
-      const yearData = vacationData[year] || [];
-
-      // Encontra a entrada correta no array para atualizar
-      const entryIndex = yearData.findIndex(entry => entry.parcSuffix == parcSuffix);
-
-      if (entryIndex > -1) {
-        // Modifica a entrada existente
-        yearData[entryIndex].startDate = newStartDate.split('-').reverse().join('/');
-        yearData[entryIndex].days = newDays;
-        yearData[entryIndex].endDate = newEndDate;
-        yearData[entryIndex].status = 'pendente';
-        yearData[entryIndex].requestedAt = new Date().toISOString();    
-
-        // Atualiza o documento com o array modificado
-        const vacationDataToUpdate = {
-          [`vacationData.${year}`]: yearData
-        };
-        await updateDoc(vacationRef, vacationDataToUpdate);
-      } else {
-        console.warn(`Parcela com sufixo ${parcSuffix} não encontrada no histórico para atualização.`);
-      }
-    }
-
-    updateVacationDisplay(vacationData)
+    // Atualiza a coleção 'vacations'
+    await updateDoc(vacationRef, dataToCommit);
 
     showModal("Sucesso!", "Parcela de férias atualizada com sucesso!");
 
@@ -500,7 +508,6 @@ async function updateVacationInstallment(installmentId, newStartDate, newDays) {
 }
 
 function parsePtBrDate(dateString) {
-  console.log(dateString)
   const [day, month, year] = dateString.split('/');
   // O mês no construtor do Date é base 0 (janeiro=0), por isso month - 1
   return new Date(year, month - 1, day);

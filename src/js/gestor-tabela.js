@@ -3,6 +3,7 @@ import { clearModal } from "../components/clearModal.js";
 import { auth, collection, db, doc, getDoc, getDocs, onAuthStateChanged, orderBy, query, updateDoc, where } from "./config";
 import { hideModal, showModal } from "../components/modal.js";
 import { deleteUser } from "../utils/deleteUser.js";
+import { openVacationEditModal } from "../utils/editUserVacation.js";
 
 let loggedManager;
 
@@ -107,6 +108,10 @@ async function populateTable(filteredEmployees) {
                 data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
                 <i data-lucide="user-pen" class="text-gray-500"></i>
             </button>
+            <button class="edit-vacation-btn cursor-pointer" title="Editar Férias"
+                data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
+                <i data-lucide="plane-takeoff" class="text-gray-500"></i>
+            </button>
             <button class="delete-user-btn cursor-pointer" title="Excluir"
                 data-user='{"userUid":"${employee.id}"}'>
                 <i data-lucide="x" class="text-red-700"></i>
@@ -125,6 +130,13 @@ async function populateTable(filteredEmployees) {
             openUserEditModal(userData);
         })
     });
+
+    document.querySelectorAll('.edit-vacation-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const userData = JSON.parse(this.getAttribute('data-user'));
+                openVacationEditModal(userData);
+            });
+        });
 
     const deleteButtons = document.querySelectorAll('.delete-user-btn');
     deleteButtons.forEach(button => {
