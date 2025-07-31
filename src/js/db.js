@@ -314,7 +314,221 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.querySelector("#sendRequest").addEventListener("click", sendRequest);
+
+  const vacationList = document.querySelector("#vacationRequests");
+
+  if (vacationList) {
+    vacationList.addEventListener("click", async function (event) {
+      const target = event.target;
+      const id = target.dataset.id;
+      if (!id) return; // Sai se o clique não foi em um elemento com data-id
+
+      const card = document.querySelector(`#card-${id}`);
+
+      // --- Ação de Editar ---
+      if (target.classList.contains("edit-btn")) {
+        toggleEditState(card, true);
+      }
+
+      // --- Ação de Salvar ---
+      if (target.classList.contains("save-btn")) {
+        toggleEditState(card, false);
+
+        const newStartDate = card.querySelector(`#inicio${id}`).value;
+        const newDays = parseInt(card.querySelector(`#dias${id}`).value, 10);
+
+        // Validação simples
+        if (!newStartDate || isNaN(newDays) || newDays <= 0) {
+          showModal("Atenção!", "Por favor, preencha a data de início e os dias corretamente.", "attention");
+          toggleEditState(card, true); // Reabilita para correção
+          return;
+        }
+
+        await updateVacationInstallment(id, newStartDate, newDays);
+
+        // Após o sucesso, atualiza a interface para refletir o status 'pendente'
+        // e os novos dados originais para o botão "Cancelar".
+        const statusBadge = card.querySelector('.status-badge');
+        statusBadge.textContent = 'Status: pendente';
+        statusBadge.className = 'status-badge px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium';
+
+        card.dataset.originalInicio = newStartDate;
+        card.dataset.originalDias = newDays;
+
+        // Atualiza o campo de término (que é sempre desabilitado)
+        const newEndDate = calculateAndFormatEndDate(newStartDate, newDays);
+        card.querySelector(`#termino${id}`).value = newEndDate.split('/').reverse().join('-');
+      }
+
+
+      // --- Ação de Cancelar ---
+      if (target.classList.contains("cancel-btn")) {
+        // Restaura os valores originais usando os atributos data-*
+        card.querySelector(`#inicio${id}`).value = card.dataset.originalInicio;
+        card.querySelector(`#dias${id}`).value = card.dataset.originalDias;
+
+        // Volta ao modo de visualização
+        toggleEditState(card, false);
+      }
+    });
+  }
 });
+
+function toggleEditState(card, isEditing) {
+  const id = card.id.split('-')[1]; // Extrai o ID do card (ex: "card-1" -> "1")
+
+  // Encontra os elementos dentro do card
+  const inputs = card.querySelectorAll(`#inicio${id}, #dias${id}`);
+  const editBtn = card.querySelector(".edit-btn");
+  const saveBtn = card.querySelector(".save-btn");
+  const cancelBtn = card.querySelector(".cancel-btn");
+
+  // Alterna a visibilidade dos botões
+  editBtn.classList.toggle("hidden", isEditing);
+  saveBtn.classList.toggle("hidden", !isEditing);
+  cancelBtn.classList.toggle("hidden", !isEditing);
+
+  // Habilita/desabilita os inputs e muda o estilo
+  inputs.forEach(input => {
+    input.disabled = !isEditing;
+    input.classList.toggle("bg-gray-100", !isEditing);
+    input.classList.toggle("bg-white", isEditing);
+  });
+}
+
+async function updateVacationInstallment(installmentId, newStartDate, newDays) {
+  loadingScreen.style.display = "flex";
+
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    // --- TRADUÇÃO DO ID PARA O SUFIXO --- // <-- MUDANÇA AQUI
+    const idToSuffixMap = {
+      '1': 'one',
+      '2': 'two',
+      '3': 'three'
+    };
+    const parcSuffix = idToSuffixMap[installmentId];
+    if (!parcSuffix) {
+      throw new Error("ID de parcela inválido para mapeamento: " + installmentId);
+    }
+
+    // 1. Mapeia o ID da parcela para os nomes dos campos no Firestore
+    const fieldMappings = getInstallmentFieldMappings(installmentId);
+    if (!fieldMappings) {
+      throw new Error("ID de parcela inválido.");
+    }
+
+    // 2. Calcula a nova data de término
+    const newEndDate = calculateAndFormatEndDate(newStartDate, newDays);
+    const year = newStartDate.split('-')[0];
+
+    // --- VALIDAÇÃO DE SOBREPOSIÇÃO ---
+    const vacationRef = doc(db, "vacations", user.uid);
+    const vacationDoc = await getDoc(vacationRef);
+
+    if (vacationDoc.exists()) {
+      const allYearData = vacationDoc.data().vacationData[year] || [];
+      // Converte o novo período para objetos Date para comparação
+      const newStartDateObj = new Date(newStartDate + 'T00:00:00');
+      const newEndDateObj = parsePtBrDate(newEndDate);
+
+      for (const existingEntry of allYearData) {
+        // Pula a verificação da própria parcela que estamos editando
+        if (existingEntry.parcSuffix == parcSuffix) {
+          continue;
+        }
+
+        const existingStartDateObj = parsePtBrDate(existingEntry.startDate);
+        const existingEndDateObj = parsePtBrDate(existingEntry.endDate);
+
+        // Lógica de verificação de sobreposição:
+        // (StartA <= EndB) and (StartB <= EndA)
+        if (newStartDateObj <= existingEndDateObj && existingStartDateObj <= newEndDateObj) {
+          throw new Error(`O período solicitado se sobrepõe com um período existente.`);
+        }
+      }
+    }
+
+    // --- ATUALIZAÇÃO DA COLEÇÃO 'users' ---
+    const userRef = doc(db, "users", user.uid);
+    const userDataToUpdate = {
+      [fieldMappings.start]: newStartDate.split('-').reverse().join('/'), // Formato dd/mm/yyyy
+      [fieldMappings.days]: newDays,
+      [fieldMappings.end]: newEndDate,
+      [fieldMappings.status]: 'pendente' // Uma edição requer nova aprovação
+    };
+    await updateDoc(userRef, userDataToUpdate);
+
+    // --- ATUALIZAÇÃO DA COLEÇÃO 'vacations' ---
+    if (vacationDoc.exists()) {
+      const vacationData = vacationDoc.data().vacationData;
+      const yearData = vacationData[year] || [];
+
+      // Encontra a entrada correta no array para atualizar
+      const entryIndex = yearData.findIndex(entry => entry.parcSuffix == parcSuffix);
+
+      if (entryIndex > -1) {
+        // Modifica a entrada existente
+        yearData[entryIndex].startDate = newStartDate.split('-').reverse().join('/');
+        yearData[entryIndex].days = newDays;
+        yearData[entryIndex].endDate = newEndDate;
+        yearData[entryIndex].status = 'pendente';
+        yearData[entryIndex].requestedAt = new Date().toISOString();    
+
+        // Atualiza o documento com o array modificado
+        const vacationDataToUpdate = {
+          [`vacationData.${year}`]: yearData
+        };
+        await updateDoc(vacationRef, vacationDataToUpdate);
+      } else {
+        console.warn(`Parcela com sufixo ${parcSuffix} não encontrada no histórico para atualização.`);
+      }
+    }
+
+    updateVacationDisplay(vacationData)
+
+    showModal("Sucesso!", "Parcela de férias atualizada com sucesso!");
+
+  } catch (error) {
+    console.error("Erro ao atualizar a parcela de férias:", error);
+    showModal("Atenção!", error.message, "attention");
+  } finally {
+    loadingScreen.style.display = "none";
+  }
+}
+
+function parsePtBrDate(dateString) {
+  console.log(dateString)
+  const [day, month, year] = dateString.split('/');
+  // O mês no construtor do Date é base 0 (janeiro=0), por isso month - 1
+  return new Date(year, month - 1, day);
+}
+
+function calculateAndFormatEndDate(startDateString, days) {
+  // Adiciona 'T00:00:00' para evitar problemas de fuso horário que podem mudar o dia
+  const date = new Date(startDateString + 'T00:00:00');
+
+  // Subtrai 1 porque o período de X dias inclui o dia de início
+  date.setDate(date.getDate() + parseInt(days) - 1);
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Meses são base 0
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
+//Retorna os nomes dos campos do Firestore com base no ID da parcela
+function getInstallmentFieldMappings(id) {
+  const map = {
+    '1': { start: 'parc_one', days: 'days_one', end: 'end_parc_one', status: 'st_parc_one' },
+    '2': { start: 'parc_two', days: 'days_two', end: 'end_parc_two', status: 'st_parc_two' },
+    '3': { start: 'parc_three', days: 'days_three', end: 'end_parc_three', status: 'st_parc_three' },
+  };
+  return map[id];
+}
 
 // Função para converter data do formato "dd/MM/yyyy" para "yyyy-MM-dd"
 function formatDateToInput(value) {
@@ -324,12 +538,13 @@ function formatDateToInput(value) {
 
 // Função para criar o cartão de férias
 function createVacationCard(vacation) {
+  const isDisabled = true;
+
   return `
-        <div class="bg-gray-50 rounded-lg p-6 shadow-md">
+        <div class="bg-gray-50 rounded-lg p-6 shadow-md" id="card-${vacation.id}" data-original-dias="${vacation.dias}" data-original-inicio="${vacation.inicio ? formatDateToInput(vacation.inicio) : ''}">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold text-gray-800">${vacation.parcela
-    }ª parcela</h2>
-                <span class="px-3 py-1 ${vacation.status === "reprovada"
+                <h2 class="text-xl font-semibold text-gray-800">${vacation.parcela}ª parcela</h2>
+                <span class="status-badge px-3 py-1 ${vacation.status === "reprovada"
       ? "bg-red-500 text-white"
       : vacation.status === "pendente"
         ? "bg-yellow-100 text-yellow-800"
@@ -338,25 +553,24 @@ function createVacationCard(vacation) {
                     Status: ${vacation.status}
                 </span>
             </div>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                    <label for="inicio${vacation.id
-    }" class="block text-sm font-medium text-gray-700 mb-1">Início</label>
-                    <input type="date" id="inicio${vacation.id}" value="${vacation.inicio ? formatDateToInput(vacation.inicio) : ""
-    }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                    <label for="inicio${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Início</label>
+                    <input type="date" id="inicio${vacation.id}" value="${vacation.inicio ? formatDateToInput(vacation.inicio) : ""}" class="w-full p-2 border border-gray-200 bg-gray-100 rounded-md" ${isDisabled ? 'disabled' : ''}>
                 </div>
                 <div>
-                    <label for="dias${vacation.id
-    }" class="block text-sm font-medium text-gray-700 mb-1">Dias</label>
-                    <input type="number" id="dias${vacation.id}" value="${vacation.dias
-    }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                    <label for="dias${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Dias</label>
+                    <input type="number" id="dias${vacation.id}" value="${vacation.dias}" class="w-full p-2 border border-gray-200 bg-gray-100 rounded-md" ${isDisabled ? 'disabled' : ''}>
                 </div>
                 <div>
-                    <label for="termino${vacation.id
-    }" class="block text-sm font-medium text-gray-700 mb-1">Término</label>
-                    <input type="date" id="termino${vacation.id}" value="${vacation.termino ? formatDateToInput(vacation.termino) : ""
-    }" class="w-full p-2 border border-gray-200 bg-white rounded-md" disabled>
+                    <label for="termino${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Término</label>
+                    <input type="date" id="termino${vacation.id}" value="${vacation.termino ? formatDateToInput(vacation.termino) : ""}" class="w-full p-2 border border-gray-200 bg-gray-100 rounded-md" disabled>
                 </div>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button data-id="${vacation.id}" class="edit-btn px-4 py-2 bg-[#172554] text-white rounded-md hover:bg-blue-600">✏️ Editar</button>
+                <button data-id="${vacation.id}" class="save-btn hidden px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">💾 Salvar</button>
+                <button data-id="${vacation.id}" class="cancel-btn hidden px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">❌ Cancelar</button>
             </div>
         </div>
     `;
