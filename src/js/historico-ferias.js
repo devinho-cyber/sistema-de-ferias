@@ -102,7 +102,7 @@ function createVacationCard(vacation) {
 
 function createSelect(options) {
     const select = document.createElement("select");
-    select.classList.add("p-2", "border", "block", "bg-[#002940]", "rounded-md")
+    select.classList.add("p-2", "border", "block", "bg-[#002940]", "rounded-md", "mt-1")
     select.innerHTML = `
         <option value="">Selecione um usuário</option>
         ${options.map(option => `<option value="${option.id}">${option.name}</option>`).join('')}

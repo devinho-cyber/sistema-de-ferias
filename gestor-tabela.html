@@ -15,7 +15,7 @@
             <button id="menuToggle" class="text-white mr-4 cursor-pointer">
                 <i data-lucide="menu" class="w-6 h-6"></i>
             </button>
-            <h1 class="text-2xl font-bold">GERENCIADOR DE CONTROLE DE FÉRIAS - Gestor</h1>
+            <h1 class="md:text-2xl font-bold">GERENCIADOR DE CONTROLE DE FÉRIAS - Gestor</h1>
             <p class="text-xl hidden" id="aps"></p>
         </div>
     </header>
@@ -68,13 +68,13 @@
     <div id="overlay" class="fixed inset-0 bg-black/50 z-30 hidden "></div>
 
     <main class="container mx-auto mt-28 px-4 flex-grow">
-        <section class="flex justify-between items-center">
-            <h1 class="text-4xl font-bold pb-3 capitalize" id="userGreeting">Olá,</h1>
-            <div class="flex gap-2 items-center ">
+        <section class="md:flex justify-between items-center">
+            <h1 class="text-2xl md:text-4xl font-bold pb-3 capitalize" id="userGreeting">Olá,</h1>
+            <div class="md:flex gap-2 items-center space-y-1.5 md:space-y-0">
                 <div class="flex items-center bg-white border rounded-md">
                     <i data-lucide="search" class="text-gray-500 ml-3"></i>
                     <input id="searchInput" type="text" placeholder="Pesquisar Funcionário..."
-                        class=" p-2 bg-transparent focus:outline-none" required>
+                        class="p-2 bg-transparent focus:outline-none" required>
                 </div>
                 <button id="create-user"
                     class="border rounded-md cursor-pointer bg-[#002940] text-white hover:bg-blue-900 transition p-2 flex gap-x-1">
@@ -83,7 +83,7 @@
                 </button>
             </div>
         </section>
-        <div class="overflow-x-auto bg-[#002940] rounded-md mb-8">
+        <div class="overflow-x-auto bg-[#002940] rounded-md my-4">
             <table class="w-full border-collapse">
                 <thead>
                     <tr class="bg-[#002940] text-white">

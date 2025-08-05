@@ -560,7 +560,7 @@ function createVacationCard(vacation) {
                     Status: ${vacation.status}
                 </span>
             </div>
-            <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="grid lg:grid-cols-3 gap-4 mb-4">
                 <div>
                     <label for="inicio${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Início</label>
                     <input type="date" id="inicio${vacation.id}" value="${vacation.inicio ? formatDateToInput(vacation.inicio) : ""}" class="w-full p-2 border border-gray-200 bg-gray-100 rounded-md" ${isDisabled ? 'disabled' : ''}>

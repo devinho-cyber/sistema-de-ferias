@@ -215,7 +215,7 @@ function createVacationCard(vacation) {
     const originalYear = vacation.inicio ? vacation.inicio.split('/')[2] : ''
 
     return `
-        <div class="bg-gray-50 rounded-lg p-6 shadow-md" id="card-${vacation.id}" data-original-dias="${vacation.dias}" data-original-inicio="${vacation.inicio ? formatDateToInput(vacation.inicio) : ''}" data-original-year="${originalYear}">
+        <div class="bg-gray-50 rounded-lg p-6 shadow-md w-full" id="card-${vacation.id}" data-original-dias="${vacation.dias}" data-original-inicio="${vacation.inicio ? formatDateToInput(vacation.inicio) : ''}" data-original-year="${originalYear}">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold text-gray-800">${vacation.parcela}ª parcela</h2>
                 <span class="status-badge px-3 py-1 ${vacation.status === "reprovada"
@@ -227,7 +227,7 @@ function createVacationCard(vacation) {
                     Status: ${vacation.status}
                 </span>
             </div>
-            <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="grid lg:grid-cols-3 gap-4 mb-4">
                 <div>
                     <label for="inicio${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Início</label>
                     <input type="date" id="inicio${vacation.id}" value="${vacation.inicio ? formatDateToInput(vacation.inicio) : ""}" class="w-full p-2 border border-gray-200 bg-gray-100 rounded-md">
