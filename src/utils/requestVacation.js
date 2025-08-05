@@ -1,4 +1,4 @@
-import { db, collection, query, getDocs, where } from "../js/config.js";
+import { db, collection, query, getDocs, where, getDoc } from "../js/config.js";
 import { sendEmail } from "./sendEmail.js";
 
 export async function handleVacationRequest(user, emailPeriods) {
@@ -10,44 +10,70 @@ export async function handleVacationRequest(user, emailPeriods) {
   };
   await sendEmail(userTemplateParams);
 
-  const { manager, admins } = await getManagerAndAdmins(user.agency);
+  if (user.permission === "gestor") {
+    sendEmailToAdmins(user, emailPeriods)
+  }
+
+  if (user.permission === "user") { //Envia email para agência do usuário
+    const agencieEmail = await getAgencyEmail(user.agency)
+
+    const commonTemplateParams = {
+      to_email: agencieEmail,
+      from_name: user.name,
+      subject: "Solicitação de Férias",
+      message: `O funcionário ${user.name} solicitou férias para o(s) período(s) de ${emailPeriods.join(", ")}.`,
+    };
+    console.table(commonTemplateParams)
+
+    await sendEmail(commonTemplateParams);
+  }
+}
+
+async function sendEmailToAdmins(user, emailPeriods) {
+  const { admins } = await getAdmins();
 
   const recipientEmails = [];
-  if (manager && manager.email) {
-    recipientEmails.push(manager.email);
-  }
+
   if (admins && admins.length > 0) {
     recipientEmails.push(...admins);
   }
 
   const commonTemplateParams = {
-    to_email: recipientEmails.join(", "), // Junta os e-mails separados por vírgula
+    to_email: recipientEmails.join(", "),
     from_name: user.name,
     subject: "Solicitação de Férias",
-    message: `O funcionário ${user.name} solicitou férias para o(s) período(s) de ${emailPeriods.join(", ")}.`,
+    message: `O gestor(a) ${user.name} da ${user.agency} solicitou férias para o(s) período(s) de ${emailPeriods.join(", ")}.`,
   };
 
-  await sendEmail(commonTemplateParams);
+  await sendEmail(commonTemplateParams)
 }
 
-async function getManagerAndAdmins(userAgency) {
-  // Busca o gestor da agência
+async function getAgencyEmail(userAgency) {
+  const agenciesRef = collection(db, "agencies")
+  const q = query(
+    agenciesRef,
+    where("name", "==", userAgency)
+  )
+
+  const agencieSnapshot = await getDocs(q);
+
+  if (agencieSnapshot.empty) {
+    throw new Error("Email da agência não encontrado")
+  }
+
+  const agencieData = agencieSnapshot.docs[0].data();
+  const agencieEmail = agencieData.email;
+
+  return agencieEmail
+}
+
+async function getAdmins() {
   const usersRef = collection(db, "users");
-  const managerQuery = query(
-    usersRef,
-    where("agency", "==", userAgency),
-    where("permission", "==", "gestor")
-  );
 
   const adminQuery = query(usersRef, where("permission", "==", "admin"));
-
-  const managersSnapshot = await getDocs(managerQuery);
-  const manager = !managersSnapshot.empty
-    ? managersSnapshot.docs[0].data()
-    : null;
 
   const adminsSnapshot = await getDocs(adminQuery);
   const admins = adminsSnapshot.docs.map((doc) => doc.data().email);
 
-  return { manager, admins };
+  return { admins };
 }
