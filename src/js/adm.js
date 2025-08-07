@@ -1,13 +1,4 @@
-import { db, doc, auth } from "./config.js";
-import {
-  collection,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  updateDoc,
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { db, doc, auth, collection, getDoc, getDocs, query, where, updateDoc, onAuthStateChanged } from "./config.js";
 import { setYear, currentYear, handleUpdateVacationRequest, exportSpredsheet, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
 import { showModal } from "../components/modal.js";
 
@@ -506,10 +497,10 @@ async function handleRequestAction(event) {
 
     // 1. Atualiza na coleção 'users'
     await updateDoc(userRef, { [`st_parc_${parcSuffix}`]: action });
-    console.log("Status atualizado com sucesso na coleção 'users'.");
 
     // 2. Atualiza na coleção 'vacations' (atualiza o status da entrada específica no histórico)
     await handleUpdateVacationRequestInVacationsCollection(employeeId, requestId, startDate, action)
+    await handleUpdateVacationRequest(userRef, `parc_${parcSuffix}`, action)
 
     // Chama as funções para refletir a atualização na tela
     updateHolidayRequests();

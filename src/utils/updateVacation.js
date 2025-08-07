@@ -1,4 +1,4 @@
-import { db, doc, getDoc, serverTimestamp, updateDoc } from '../js/config.js';
+import { getDoc, serverTimestamp, updateDoc } from '../js/config.js';
 import { sendEmail } from './sendEmail.js';
 
 export async function handleUpdateVacationRequest(userRef, parcel, status) {
@@ -20,7 +20,7 @@ export async function handleUpdateVacationRequest(userRef, parcel, status) {
     // Obtém os dados da parcela (se já estiverem armazenados no documento)
     const parcelaData = userData[parcel];
 
-    // await createMessageToEmail(userData.email, parcelaData, status);
+    await createMessageToEmail(userData.email, parcelaData, status);
 
     console.log("Dados atualizados com sucesso!");
   } catch (error) {

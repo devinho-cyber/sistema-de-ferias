@@ -1,5 +1,4 @@
-import { db, doc, auth, collection, getDoc, getDocs, query, where, updateDoc } from "./config.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { db, doc, auth, collection, getDoc, getDocs, query, where, updateDoc, onAuthStateChanged } from "./config.js";
 import {setYear, currentYear, handleUpdateVacationRequest, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
 import { showModal } from "../components/modal.js";
 
@@ -507,6 +506,7 @@ async function handleRequestAction(event) {
     console.log("Solicitação atualizada com sucesso!");
 
     await handleUpdateVacationRequestInVacationsCollection(employeeId, requestId, startDate, action)
+    await handleUpdateVacationRequest(userRef, `parc_${parcSuffix}`, action)
 
     //Chama as funções para refletir a atualização na tela
     updateHolidayRequests()
