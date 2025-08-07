@@ -1,8 +1,7 @@
-import { loadingScreen, searchEmployees, validateCreateUserInputs } from '../utils';
+import { searchEmployees, validateCreateUserInputs } from '../utils';
 import { clearModal } from '../components/clearModal.js';
 import { deleteUser } from '../utils/deleteUser.js';
-import { auth, db, getDoc } from './config.js';
-import { collection, doc, updateDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { auth, db, collection, doc, updateDoc, getDocs, query, where, orderBy } from './config.js';
 import { hideModal, showModal } from '../components/modal.js';
 import { openVacationEditModal } from '../utils/editUserVacation.js';
 

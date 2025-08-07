@@ -1,4 +1,4 @@
-import { db, collection, query, getDocs, where, getDoc } from "../js/config.js";
+import { db, collection, query, getDocs, where } from "../js/config.js";
 import { sendEmail } from "./sendEmail.js";
 
 export async function handleVacationRequest(user, emailPeriods) {
