@@ -1,3 +1,4 @@
+import { showConfirmationModal } from "../components/confirmationModal";
 import { showModal } from "../components/modal";
 import { db, doc, getDoc, updateDoc } from "../js/config";
 import { loadingScreen } from "./load";
@@ -5,8 +6,8 @@ import { loadingScreen } from "./load";
 export async function openVacationEditModal(userData) {
     // 1. Abre um modal com um estado de carregamento
     const modalTitle = `Editando Férias de: ${userData.name}`;
-    const loadingHTML = `<div id="vacation-cards-container" class="text-center p-4">Carregando dados...</div>`;
-    showModal(modalTitle, loadingHTML, 'success', false); // O 'false' impede que o botão OK padrão apareça
+    const loadingHTML = `<div id="vacation-cards-container" class="text-center p-4 space-y-1.5">Carregando dados...</div>`;
+    showModal(modalTitle, loadingHTML, 'success');
 
     const container = document.getElementById('vacation-cards-container');
 
@@ -24,6 +25,14 @@ export async function openVacationEditModal(userData) {
         // 3. Renderiza os cards ou uma mensagem de "nenhuma férias"
         if (vacationParcels.length > 0) {
             container.innerHTML = vacationParcels.map(createVacationCard).join('');
+
+            // Cria e adiciona o botão de exclusão
+            const deleteVacationButton = document.createElement('button')
+            deleteVacationButton.textContent = '🗑️ Excluir Todas as Parcelas'
+            deleteVacationButton.className = 'mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 w-full cursor-pointer'
+            deleteVacationButton.addEventListener('click', () => deleteAllVacations(userData.id));
+            container.appendChild(deleteVacationButton)
+
             // Adiciona a interatividade de edição aos cards recém-criados
             setupVacationCardInteractivity(container, userData.id);
         } else {
@@ -35,6 +44,58 @@ export async function openVacationEditModal(userData) {
     }
 }
 
+async function deleteAllVacations(userId) {
+    const userConfirmed = await showConfirmationModal('Excluir Férias', 'Você tem certeza que deseja excluir TODOS os dados de férias deste usuário? Esta ação não pode ser desfeita.');
+    if (!userConfirmed) return;
+
+    loadingScreen.style.display = "flex";
+
+    try {
+        const userRef = doc(db, "users", userId);
+        const vacationRef = doc(db, "vacations", userId);
+
+        const userDataToUpdate = {
+            parc_one: null,
+            days_one: null,
+            end_parc_one: null,
+            st_parc_one: null,
+            parc_two: null,
+            days_two: null,
+            end_parc_two: null,
+            st_parc_two: null,
+            parc_three: null,
+            days_three: null,
+            end_parc_three: null,
+            st_parc_three: null
+        };
+
+        // Isso remove todos os registros de férias, mantendo o documento do usuário
+        const vacationDataToUpdate = {
+            vacationData: {}
+        };
+        
+        // 5. Executar as atualizações em ambas as coleções
+        await updateDoc(userRef, userDataToUpdate);
+        await updateDoc(vacationRef, vacationDataToUpdate);
+        
+        // 6. Dar feedback de sucesso e atualizar a UI do modal
+        const container = document.getElementById('vacation-cards-container');
+        if (container) {
+            container.innerHTML = `<div class="text-center p-4">
+                                       <p class="text-green-600 font-semibold">Férias excluídas com sucesso!</p>
+                                       <p class="text-gray-500">O usuário não possui mais férias solicitadas.</p>
+                                   </div>`;
+        }
+        
+        showModal("Sucesso", "Todos os dados de férias foram excluídos.", 'success');
+
+    } catch (error) {
+        console.error("Erro ao excluir os dados de férias:", error);
+        showModal("Erro!", "Não foi possível excluir os dados de férias. Tente novamente.", "attention");
+    } finally {
+        loadingScreen.style.display = "none";
+    }
+}
 // Função auxiliar para buscar os dados de férias de um usuário específico
 async function fetchUserVacationData(userId) {
     const userRef = doc(db, "users", userId);
@@ -146,7 +207,7 @@ async function updateVacationInstallment(userId, installmentId, originalYear, ne
 
         // Atualiza a coleção 'vacations'
         await updateDoc(vacationRef, dataToCommit);
-        
+
         showModal("Sucesso!", "Parcela de férias atualizada com sucesso!");
 
     } catch (error) {
