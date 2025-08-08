@@ -10,7 +10,8 @@ import {
 } from "./config.js";
 import { currentYear, loadingScreen, handleVacationRequest } from "../utils";
 import { calculateEndDate } from "./user.js";
-import { hideModal, showModal } from "../components/modal.js";
+import { showModal } from "../components/modal.js";
+import { showConfirmationModal } from "../components/confirmationModal.js";
 
 const maxDays = 30; // Define o valor máximo de dias permitido
 let vacationData = [];
@@ -61,48 +62,6 @@ function formatDateToBR(date) {
   return `${day}/${month}/${year}`;
 }
 
-// Função para exibir o modal de confirmação antes de enviar
-function showConfirmationModal(vacationData) {
-  return new Promise((resolve, reject) => {
-    const modalTitle = "Confirmar ação";
-    showModal(modalTitle, "Deseja enviar a solicitação de férias?", "confirm");
-
-    const modalActions = document.querySelector("#modal .items-center");
-
-    modalActions.innerHTML = `
-            <div class="flex justify-center gap-4">
-                <button id="confirm-request" class="px-4 py-2 bg-[#172554] transition text-white rounded-md hover:bg-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-blue-300">
-                    Confirmar
-                </button>
-                <button id="cancel-request" class="px-4 py-2 bg-gray-300 transition text-gray-800 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400">
-                    Cancelar
-                </button>
-            </div>
-        `;
-
-    // Event listener para o botão de confirmação
-    document.getElementById("confirm-request").addEventListener("click", () => {
-      hideModal(); // Fecha o modal
-      resolve(true); // Confirma a ação
-      modalActions.innerHTML = `<button id="modal-close" class="px-4 py-2 text-white text-base 
-            font-medium rounded-md w-full shadow-sm focus:outline-none bg-[#172554] transition hover:bg-[#1e3a8a] focus:ring-2 focus:ring-offset-2">
-                    OK
-                </button>`;
-
-      // Event listener para o botão "OK" para fechar o modal
-      document
-        .getElementById("modal-close")
-        .addEventListener("click", hideModal);
-    });
-
-    // Event listener para o botão de cancelar
-    document.getElementById("cancel-request").addEventListener("click", () => {
-      hideModal(); // Fecha o modal
-      resolve(false); // Cancela a ação
-    });
-  });
-}
-
 // Função para enviar a solicitação de férias
 async function sendRequest() {
   try {
@@ -123,7 +82,7 @@ async function sendRequest() {
     }
 
     // Exibe o modal de confirmação
-    const userConfirmed = await showConfirmationModal();
+    const userConfirmed = await showConfirmationModal("Confirmar ação", "Deseja enviar a solicitação de férias?");
     if (!userConfirmed) return;
 
     // Exibe a tela de loading
