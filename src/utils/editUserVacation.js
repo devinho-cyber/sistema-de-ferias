@@ -234,7 +234,7 @@ function createVacationCard(vacation) {
                 </div>
                 <div>
                     <label for="dias${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Dias</label>
-                    <input type="number" id="dias${vacation.id}" value="${vacation.dias}" class="w-full p-2 border border-gray-200 bg-gray-100 rounded-md">
+                    <input type="number" max="30" min="0" id="dias${vacation.id}" value="${vacation.dias}" class="w-full p-2 border border-gray-200 bg-gray-100 rounded-md">
                 </div>
                 <div>
                     <label for="termino${vacation.id}" class="block text-sm font-medium text-gray-700 mb-1">Término</label>
