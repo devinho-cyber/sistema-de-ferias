@@ -41,12 +41,12 @@ export function calculateEndDate(dayInput, dateInput, endDateElement) {
   const dayValue = Number(dayInput.value);
   const startDate = dateInput.value ? new Date(dateInput.value) : null;
 
-  if (startDate && startDate < today) {
-    showModal("Atenção!", "A data inicial deve ser posterior à data atual.", "attention");
-    dateInput.value = "";
-    endDateElement.textContent = "";
-    return;
-  }
+  // if (startDate && startDate < today) {
+  //   showModal("Atenção!", "A data inicial deve ser posterior à data atual.", "attention");
+  //   dateInput.value = "";
+  //   endDateElement.textContent = "";
+  //   return;
+  // }
 
   if (startDate && dayValue) {
     const endDate = new Date(startDate);

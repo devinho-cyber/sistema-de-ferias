@@ -180,9 +180,9 @@ function validateVacationEntries(dayInputs, dateInputs) {
       const startDate = new Date(`${startDateParts[2]}-${startDateParts[1]}-${startDateParts[0]}`);
       startDate.setHours(0, 0, 0, 0);
 
-      if (startDate < today) {
-        throw new Error("A data inicial deve ser posterior ou igual à data atual.");
-      }
+      // if (startDate < today) {
+      //   throw new Error("A data inicial deve ser posterior ou igual à data atual.");
+      // }
 
       if (lastEndDate && startDate <= lastEndDate) {
         throw new Error("A data inicial de cada parcela deve ser posterior à data final da parcela anterior.");
