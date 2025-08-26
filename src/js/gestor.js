@@ -1,5 +1,5 @@
 import { db, doc, auth, collection, getDoc, getDocs, query, where, updateDoc, onAuthStateChanged } from "./config.js";
-import {setYear, currentYear, handleUpdateVacationRequest, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
+import { setYear, currentYear, handleUpdateVacationRequest, loadingScreen, handleUpdateVacationRequestInVacationsCollection } from "../utils";
 import { showModal } from "../components/modal.js";
 
 let loggedManager;
@@ -351,62 +351,69 @@ async function populateTable(selectedYear) {
     nameCell.className = "p-3 font-medium";
     row.appendChild(nameCell);
 
-    // Inicializa um array de 12 elementos para status mensal e outro para datas (como arrays para acumular várias parcelas)
-    const monthlyVacationStatus = Array(12)
-      .fill(null)
-      .map(() => []);
-    const monthlyVacationDates = Array(12)
-      .fill(null)
-      .map(() => []);
+    // Estrutura para guardar informações detalhadas de cada mês
+    const monthlyInfo = Array(12).fill(null).map(() => ({
+      status: null,
+      days: [],
+      parcelStartDate: null,
+      parcelEndDate: null
+    }));
 
-    // Percorre cada parcela para determinar o mês e definir o status
     ["one", "two", "three"].forEach((parcSuffix) => {
-      const startDate = employee[`parc_${parcSuffix}`];
-      const days = parseInt(employee[`days_${parcSuffix}`], 10); // Converte para inteiro
+      const startDateStr = employee[`parc_${parcSuffix}`];
+      const days = parseInt(employee[`days_${parcSuffix}`], 10);
       const status = employee[`st_parc_${parcSuffix}`];
 
-      if (startDate && !isNaN(days) && status) {
-        const [dayStart, monthStart, yearStart] = startDate
-          .split("/")
-          .map(Number);
-        const endDate = new Date(yearStart, monthStart - 1, dayStart);
-        endDate.setDate(endDate.getDate() + days - 1); // Calcula a data final
+      if (startDateStr && !isNaN(days) && status) {
+        const [dayStart, monthStart, yearStart] = startDateStr.split("/").map(Number);
 
-        const startMonth = monthStart - 1; // Mês de início (0-11)
-        const endMonth = endDate.getMonth(); // Mês de fim
+        // Define as datas de início e fim completas da parcela
+        const parcelStartDate = new Date(yearStart, monthStart - 1, dayStart);
+        const parcelEndDate = new Date(parcelStartDate);
+        parcelEndDate.setDate(parcelStartDate.getDate() + days - 1);
 
-        // Verifica se o ano da data de início corresponde ao ano selecionado
-        // Define o status para cada mês com base no mês de início e fim de cada período de férias
-        if (yearStart === selectedYear) {
-          for (let month = startMonth; month <= endMonth; month++) {
-            monthlyVacationStatus[month] = status;
+        // Itera dia a dia
+        let currentDate = new Date(parcelStartDate);
+        for (let i = 0; i < days; i++) {
+          const currentYear = currentDate.getFullYear();
+          const currentMonth = currentDate.getMonth();
 
-            // Define a data para o caso de início e fim no mesmo mês
-            if (startMonth === endMonth) {
-              monthlyVacationDates[
-                month
-              ] = `${dayStart}/${monthStart} - ${endDate.getDate()}/${endDate.getMonth() + 1
-                }`;
-            } else if (month === startMonth) {
-              // Se for o primeiro mês, exibe a data de início
-              monthlyVacationDates[month] = `${dayStart}/${monthStart}`;
-            } else if (month === endMonth) {
-              // Se for o último mês, exibe a data de fim
-              monthlyVacationDates[month] = `${endDate.getDate()}/${endDate.getMonth() + 1
-                }`;
-            } else {
-              // Se for um mês intermediário, não mostra nenhuma data específica
-              monthlyVacationDates[month] = "";
-            }
+          if (currentYear === selectedYear) {
+            monthlyInfo[currentMonth].status = status;
+            monthlyInfo[currentMonth].days.push(currentDate.getDate());
+            // Armazena a referência ao período completo da parcela
+            monthlyInfo[currentMonth].parcelStartDate = parcelStartDate;
+            monthlyInfo[currentMonth].parcelEndDate = parcelEndDate;
           }
+          currentDate.setDate(currentDate.getDate() + 1);
         }
       }
     });
 
-    // Adiciona células de férias para cada mês, com o status e a data
-    monthlyVacationStatus.forEach((status, month) => {
-      const date = monthlyVacationDates[month];
-      row.innerHTML += createVacationCell(status, date);
+    // Formata as strings de data e cria as células
+    monthlyInfo.forEach((info, month) => {
+      let dateString = "";
+      if (info.status) {
+        const parcelStart = info.parcelStartDate;
+        const parcelEnd = info.parcelEndDate;
+        const monthNumber = month + 1;
+
+        // Verifica se a parcela inteira ocorre no mesmo mês
+        if (parcelStart.getMonth() === parcelEnd.getMonth()) {
+          dateString = `${parcelStart.getDate()}/${monthNumber} - ${parcelEnd.getDate()}/${monthNumber}`;
+        } else {
+          // Se a parcela cruza meses, aplica a nova regra
+          if (month === parcelStart.getMonth()) {
+            // É o mês de início da parcela
+            dateString = `${parcelStart.getDate()}/${monthNumber}`;
+          } else if (month === parcelEnd.getMonth()) {
+            // É o mês de fim da parcela
+            dateString = `${parcelEnd.getDate()}/${monthNumber}`;
+          }
+          // Para meses intermediários, dateString permanece ""
+        }
+      }
+      row.innerHTML += createVacationCell(info.status, dateString);
     });
 
     tableBody.appendChild(row);
