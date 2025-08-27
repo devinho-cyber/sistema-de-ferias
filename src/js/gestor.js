@@ -99,7 +99,7 @@ function renderDailySchedule(month, year, filteredEmployeeList, totalEmployeeCou
   const dailyVacationCounts = Array(daysInMonth + 1).fill(0);
   vacationData.forEach(vacation => {
     // ATUALIZAÇÃO: Considera apenas status 'aprovado' ou 'pendente' para o cálculo
-    if (vacation.status !== 'aprovado' && vacation.status !== 'pendente') {
+    if (vacation.status !== 'aprovada' && vacation.status !== 'pendente') {
       return
     }
 
@@ -137,7 +137,7 @@ function renderDailySchedule(month, year, filteredEmployeeList, totalEmployeeCou
       let iconHTML = ''
 
       switch (status) {
-        case 'aprovado':
+        case 'aprovada':
           vacationClass = 'bg-green-500';
           iconHTML = `<i data-lucide="check-circle-2" class="text-green-700 w-6 h-6"></i>`;
           break;
@@ -256,7 +256,7 @@ async function openUserEditModal(month) { // month é o número do mês (1-12)
       .filter(employee => {
         return vacationData.some(vacation => {
           if (vacation.employee !== employee.name) return false;
-          if (vacation.status !== 'aprovado' && vacation.status !== 'pendente') return false;
+          if (vacation.status !== 'aprovada' && vacation.status !== 'pendente') return false;
 
           const vacationStartDate = new Date(vacation.start + 'T00:00:00');
           const vacationEndDate = new Date(vacation.end + 'T00:00:00');
@@ -285,7 +285,7 @@ async function openUserEditModal(month) { // month é o número do mês (1-12)
 function createVacationCell(status, date) {
   let bgColor, textColor, icon;
   switch (status) {
-    case "aprovado":
+    case "aprovada":
       bgColor = "bg-green-200";
       textColor = "text-green-700";
       icon = "check-circle";
@@ -295,7 +295,7 @@ function createVacationCell(status, date) {
       textColor = "text-yellow-700";
       icon = "clock";
       break;
-    case "reprovado":
+    case "reprovada":
       bgColor = "bg-red-300";
       textColor = "text-red-700";
       icon = "ban";
@@ -513,7 +513,7 @@ async function handleRequestAction(event) {
     console.log("Solicitação atualizada com sucesso!");
 
     await handleUpdateVacationRequestInVacationsCollection(employeeId, requestId, startDate, action)
-    await handleUpdateVacationRequest(userRef, `parc_${parcSuffix}`, action)
+    // await handleUpdateVacationRequest(userRef, `parc_${parcSuffix}`, action)
 
     //Chama as funções para refletir a atualização na tela
     updateHolidayRequests()
