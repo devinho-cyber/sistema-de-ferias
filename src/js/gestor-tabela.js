@@ -77,7 +77,7 @@ async function populateTable(filteredEmployees) {
 
     employees.forEach(employee => {
         const row = document.createElement('tr');
-        row.className = 'border-b border-gray-200';
+        row.className = 'border-b border-gray-200 nth-[even]:bg-gray-200';
 
         // Coluna com o nome do funcionário
         const nameCell = document.createElement('td');
@@ -107,7 +107,7 @@ async function populateTable(filteredEmployees) {
         row.appendChild(emailCell);
 
         const actionsCell = document.createElement('td');
-        actionsCell.className = 'flex justify-center mt-2 gap-2';
+        actionsCell.className = 'flex justify-center items-center gap-3 p-3';
         actionsCell.innerHTML = `
             <button class="edit-user-btn cursor-pointer"
                 data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}","central":"${employee.central}"}'>
