@@ -55,7 +55,7 @@ async function populateTable(filteredEmployees) {
 
         // Adicione a célula "Em Férias" com o valor do banco de dados
         const vacationCell = document.createElement('td');
-        vacationCell.textContent = employee.emFerias === "Sim" ? "Sim" : "Não"; // Exibe "Sim" ou "Não"
+        vacationCell.textContent = employee.emFerias;
         vacationCell.className = 'p-3 text-center';
         row.appendChild(vacationCell);
 
@@ -64,10 +64,10 @@ async function populateTable(filteredEmployees) {
         apsCell.className = 'p-3 text-center';
         row.appendChild(apsCell);
 
-        const sector = document.createElement('td');
-        sector.textContent = employee.sector ? employee.sector : '-';
-        sector.className = 'p-3 text-center';
-        row.appendChild(sector);
+        const centralCell = document.createElement('td');
+        centralCell.textContent = employee.central === 'Unidade' ? '-' : employee.central;
+        centralCell.className = 'p-3 text-center';
+        row.appendChild(centralCell);
 
         const emailCell = document.createElement('td');
         emailCell.textContent = employee.email;
@@ -83,7 +83,7 @@ async function populateTable(filteredEmployees) {
         actionsCell.className = 'flex justify-center mt-2 gap-3';
         actionsCell.innerHTML = `
             <button class="edit-user-btn cursor-pointer" title="Editar"
-                data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
+                data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}","central":"${employee.central}"}'>
                 <i data-lucide="user-pen" class="text-gray-500"></i>
             </button>
             <button class="edit-vacation-btn cursor-pointer" title="Editar Férias"
@@ -154,6 +154,14 @@ function openUserEditModal(userData) {
                     <option value="APS Palma">APS Palma</option>
                     <option value="APS São João Nepomuceno">APS São João Nepomuceno</option>
                     <option value="APS Espera Feliz">APS Espera Feliz</option>
+                    <option value="SADJ">SADJ</option>
+                    <option value="SAIS">SAIS</option>
+                    <option value="SAMB">SAMB</option>
+                    <option value="SAMC">SAMC</option>
+                    <option value="SARD">SARD</option>
+                    <option value="SAREC">SAREC</option>
+                    <option value="SGBEN">SGBEN</option>
+                    <option value="SGREC">SGREC</option>
                 </select>
             </div>
             <div>
@@ -168,6 +176,21 @@ function openUserEditModal(userData) {
                     <option value="gestor">gestor</option>
                     <option value="admin">admin</option>
                 </select>
+            </div>
+            <div class="my-4 flex flex-col">
+                <div>
+                    <label for="unidade">Unidade</label>
+                    <input type="radio" value="Unidade" name="unicenter" id="unidade" ${userData.central === 'Unidade' ? 'checked' : ''} />
+                </div>
+                <div>
+                    <label for="central-rd">Central-RD</label>
+                    <input type="radio" value="Central-RD" name="unicenter" id="central-rd" ${userData.central === 'Central-RD' ? 'checked' : ''} />
+                </div>
+                <div>
+                    <label for="central-man">Central-MAN</label>
+                    <input type="radio" value="Central-MAN" name="unicenter" id="central-man" ${userData.central === 'Central-MAN' ? 'checked' : ''} />
+                </div>
+                <div><small class="text-gray-500">⚠️Se não pertencer a central, selecione Unidade⚠️</small></div>
             </div>
         </div>
     `;
@@ -201,6 +224,7 @@ async function editUser(userId) {
     const agency = document.getElementById('user-agency').value;
     const email = document.getElementById('user-email').value;
     const permission = document.getElementById('user-permission').value;
+    const central = document.querySelector('input[name="unicenter"]:checked').value;
 
     // Atualiza os dados no Firestore
     const userRef = doc(db, 'users', userId);
@@ -208,7 +232,8 @@ async function editUser(userId) {
         name: name,
         agency: agency,
         email: email,
-        permission: permission
+        permission: permission,
+        central: central
     });
 
     // Recarrega a tabela
@@ -216,32 +241,6 @@ async function editUser(userId) {
 }
 
 document.getElementById('create-user').addEventListener('click', openCreateUserModal)
-
-// Adicione esta função auxiliar para a lógica do campo "Setor"
-function setupAgencySectorLogic() {
-    const agencySelect = document.getElementById("user-agency");
-    const sectorSelect = document.getElementById("sector");
-
-    // Garante que os elementos existem antes de adicionar o listener
-    if (agencySelect && sectorSelect) {
-        // Exibe o campo "Setor" se "Gerencia Executiva" já estiver selecionada
-        if (agencySelect.value === "Gerencia Executiva") {
-            sectorSelect.style.display = "block";
-        } else {
-            sectorSelect.style.display = "none";
-        }
-
-        // Adiciona o listener para futuras mudanças
-        agencySelect.addEventListener("change", () => {
-            if (agencySelect.value === "Gerencia Executiva") {
-                sectorSelect.style.display = "block";
-            } else {
-                sectorSelect.style.display = "none";
-                sectorSelect.value = ""; // Limpa o valor se a agência for trocada
-            }
-        });
-    }
-}
 
 function openCreateUserModal() {
     const modalTitle = "Cadastrar Usuário";
@@ -269,21 +268,30 @@ function openCreateUserModal() {
                     <option value="APS Palma">APS Palma</option>
                     <option value="APS São João Nepomuceno">APS São João Nepomuceno</option>
                     <option value="APS Espera Feliz">APS Espera Feliz</option>
-                </select>
-                <select name="sector" id="sector" class="p-2 border w-full bg-transparent rounded-md mt-2" style="display: none;">
-                    <option value="">Selecione a seção</option>
-                    <option value="Gabinete">Gabinete</option>
                     <option value="SADJ">SADJ</option>
                     <option value="SAIS">SAIS</option>
                     <option value="SAMB">SAMB</option>
                     <option value="SAMC">SAMC</option>
                     <option value="SARD">SARD</option>
                     <option value="SAREC">SAREC</option>
-                    <option value="SEST-MAN">SEST-MAN</option>
-                    <option value="SEST-RD">SEST-RD</option>
                     <option value="SGBEN">SGBEN</option>
                     <option value="SGREC">SGREC</option>
                 </select>
+                <div class="my-4 flex flex-col">
+                    <div>
+                        <label for="unidade">Unidade</label>
+                        <input type="radio" value="Unidade" name="unicenter" id="unidade"/>
+                    </div>
+                    <div>
+                        <label for="central-rd">Central-RD</label>
+                        <input type="radio" value="Central-RD" name="unicenter" id="central-rd"/>
+                    </div>
+                    <div>
+                        <label for="central-man">Central-MAN</label>
+                        <input type="radio" value="Central-MAN" name="unicenter" id="central-man"/>
+                    </div>
+                    <div><small class="text-gray-500">⚠️Se não pertencer a central, selecione Unidade⚠️</small></div>
+                </div>
             </div>
             <div>
                 <label for="user-permission" class="font-bold">Permissão:</label>
@@ -327,7 +335,7 @@ function openCreateUserModal() {
     document.getElementById('cancel-create').addEventListener('click', hideModal);
 
     // **IMPORTANTE**: Ativa a lógica da agência/setor DEPOIS que o modal está no DOM
-    setupAgencySectorLogic();
+    // setupAgencySectorLogic();
 
     // Adiciona o listener para o botão de salvar
     document.getElementById('save-user').addEventListener('click', async () => {
@@ -342,10 +350,11 @@ async function createUser() {
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const agency = document.getElementById('user-agency').value;
-    const sector = document.getElementById('sector').value;
+    const central = document.querySelector('input[name="unicenter"]:checked').value;
     const permission = document.getElementById('user-permission').value;
 
     validateCreateUserInputs(name, email, password, confirmPassword)
+    console.log(central)
 
     try {
         const currentUser = auth.currentUser
@@ -358,7 +367,7 @@ async function createUser() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ name, email, password, agency, sector, permission })
+            body: JSON.stringify({ name, email, password, agency, central, permission })
         })
 
         if (!response.ok) {

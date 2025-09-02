@@ -87,7 +87,7 @@ async function populateTable(filteredEmployees) {
 
         // Adicione a célula "Em Férias" com o valor do banco de dados
         const vacationCell = document.createElement('td');
-        vacationCell.textContent = employee.emFerias === "Sim" ? "Sim" : "Não"; // Exibe "Sim" ou "Não"
+        vacationCell.textContent = employee.emFerias;
         vacationCell.className = 'p-3 text-center';
         row.appendChild(vacationCell);
 
@@ -95,6 +95,11 @@ async function populateTable(filteredEmployees) {
         apsCell.textContent = employee.agency;
         apsCell.className = 'p-3 text-center';
         row.appendChild(apsCell);
+
+        const centralCell = document.createElement('td');
+        centralCell.textContent = employee.central === 'Unidade' ? '-' : employee.central;
+        centralCell.className = 'p-3 text-center';
+        row.appendChild(centralCell);
 
         const emailCell = document.createElement('td');
         emailCell.textContent = employee.email;
@@ -105,7 +110,7 @@ async function populateTable(filteredEmployees) {
         actionsCell.className = 'flex justify-center mt-2 gap-2';
         actionsCell.innerHTML = `
             <button class="edit-user-btn cursor-pointer"
-                data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}"}'>
+                data-user='{"id":"${employee.id}","name":"${employee.name}","emFerias":"${employee.emFerias}","agency":"${employee.agency}","email":"${employee.email}","permission":"${employee.permission}","central":"${employee.central}"}'>
                 <i data-lucide="user-pen" class="text-gray-500"></i>
             </button>
             <button class="edit-vacation-btn cursor-pointer" title="Editar Férias"
@@ -166,6 +171,21 @@ function openUserEditModal(userData) {
                 <label for="user-email" class="font-bold">Email:</label>
                 <input type="text" id="user-email" value="${userData.email}" class="border p-2 w-full rounded-md">
             </div>
+            <div class="my-4 flex flex-col">
+                <div>
+                    <label for="unidade">Unidade</label>
+                    <input type="radio" value="Unidade" name="unicenter" id="unidade" ${userData.central === 'Unidade' ? 'checked' : ''} />
+                </div>
+                <div>
+                    <label for="central-rd">Central-RD</label>
+                    <input type="radio" value="Central-RD" name="unicenter" id="central-rd" ${userData.central === 'Central-RD' ? 'checked' : ''} />
+                </div>
+                <div>
+                    <label for="central-man">Central-MAN</label>
+                    <input type="radio" value="Central-MAN" name="unicenter" id="central-man" ${userData.central === 'Central-MAN' ? 'checked' : ''} />
+                </div>
+                <div><small class="text-gray-500">⚠️Se não pertencer a central, selecione Unidade⚠️</small></div>
+            </div>
         </div>
     `;
 
@@ -196,6 +216,7 @@ function openUserEditModal(userData) {
 async function editUser(userId) {
     const name = document.getElementById('user-name').value;
     const email = document.getElementById('user-email').value;
+    const central = document.querySelector('input[name="unicenter"]:checked').value;
 
     // Atualiza os dados no Firestore
     try {
@@ -203,6 +224,7 @@ async function editUser(userId) {
         await updateDoc(userRef, {
             name: name,
             email: email,
+            central: central
         })
     } catch (error) {
         console.error("Erro ao editar usuário:", error)
@@ -232,6 +254,22 @@ function openCreateUserModal() {
                 <select name="Unidade" id="user-agency" class="p-2 border w-full bg-transparent rounded-md">
                     <option value="${loggedManager.agency}">${loggedManager.agency}</option>
                 </select>
+
+                <div class="my-4 flex flex-col">
+                    <div>
+                        <label for="unidade">Unidade</label>
+                        <input type="radio" value="Unidade" name="unicenter" id="unidade"/>
+                    </div>
+                    <div>
+                        <label for="central-rd">Central-RD</label>
+                        <input type="radio" value="Central-RD" name="unicenter" id="central-rd"/>
+                    </div>
+                    <div>
+                        <label for="central-man">Central-MAN</label>
+                        <input type="radio" value="Central-MAN" name="unicenter" id="central-man"/>
+                    </div>
+                    <div><small class="text-gray-500">⚠️Se não pertencer a central, selecione Unidade⚠️</small></div>
+                </div>
             </div>
             <div>
                 <label for="password" class="font-bold">Senha:</label>
@@ -279,6 +317,7 @@ async function createUser() {
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const agency = document.getElementById('user-agency').value;
+    const central = document.querySelector('input[name="unicenter"]:checked').value;
 
     validateCreateUserInputs(name, email, password, confirmPassword)
 
@@ -293,7 +332,7 @@ async function createUser() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ name, email, password, agency, permission: "user" })
+            body: JSON.stringify({ name, email, password, agency, central, permission: "user" })
         })
 
         if (!response.ok) {
