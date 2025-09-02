@@ -156,6 +156,7 @@ function openUserEditModal(userData) {
                     <option value="APS Espera Feliz">APS Espera Feliz</option>
                     <option value="SADJ">SADJ</option>
                     <option value="SAIS">SAIS</option>
+                    <option value="SAACB">SAACB</option>
                     <option value="SAMB">SAMB</option>
                     <option value="SAMC">SAMC</option>
                     <option value="SARD">SARD</option>
@@ -270,6 +271,7 @@ function openCreateUserModal() {
                     <option value="APS Espera Feliz">APS Espera Feliz</option>
                     <option value="SADJ">SADJ</option>
                     <option value="SAIS">SAIS</option>
+                    <option value="SAACB">SAACB</option>
                     <option value="SAMB">SAMB</option>
                     <option value="SAMC">SAMC</option>
                     <option value="SARD">SARD</option>
