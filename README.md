@@ -62,14 +62,20 @@ A estrutura de pastas do projeto está organizada da seguinte forma, focando nos
 ### Demonstração em Vídeo
 ![Demonstração do Projeto](https://github.com/devinho-cyber/sistema-de-ferias/blob/main/Sistema-gif.gif?raw=true)
 
-### Tela de Login
-![Tela de Login](https://github.com/devinho-cyber/sistema-de-ferias/blob/main/login.png?raw=true)
-
 ### Dashboard do Usuário
-![Dashboard do Usuário](https://github.com/devinho-cyber/sistema-de-ferias/blob/main/pedido-de-ferias.png?raw=true)
+![Dashboard do Usuário](https://github.com/devinho-cyber/sistemadeferiasreact/blob/main/pedido-de-ferias.png?raw=true)
 
-### Painel do Administrador
-![Painel do Administrador](https://github.com/devinho-cyber/sistema-de-ferias/blob/main/lista-admin.png?raw=true)
+### Painel de Pedidos das Férias
+![Tela de Pedidos](https://github.com/devinho-cyber/sistemadeferiasreact/blob/main/Tabela-de-ferias.png?raw=true)
+
+### Painel Detalhado por Mês das Férias
+![Tela de detalhes das férias](https://github.com/devinho-cyber/sistemadeferiasreact/blob/main/detalhe-das-ferias.png?raw=true)
+
+### Painel do Administrador e Gestor
+![Painel do Administrador](https://github.com/devinho-cyber/sistemadeferiasreact/blob/main/Tabela-usuarios.png?raw=true)
+
+### Painel do Historico de Férias
+![Tela do Historico](https://github.com/devinho-cyber/sistemadeferiasreact/blob/main/historico-de-ferias.png?raw=true)
 
 ## 📧 Contato
 
